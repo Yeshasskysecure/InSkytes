@@ -1,0 +1,94 @@
+$ik-font-family: 'DM Sans', Arial, sans-serif;
+
+$ik-brand-blue: #0057b8;
+$ik-brand-purple: #5b3fe0;
+$ik-primary: #5636d9;
+$ik-primary-hover: #4b2fca;
+$ik-pink: #d958b4;
+$ik-text: #111827;
+$ik-text-muted: #667085;
+$ik-border: #e3e7ef;
+$ik-border-strong: #d7dde8;
+$ik-surface: #ffffff;
+$ik-page-bg: #ffffff;
+$ik-shell-gradient: linear-gradient(90deg, #FFFCFD 0%, #F9F7FF 100%);
+$ik-brand-gradient: linear-gradient(90deg, #F568A0 0%, #4D39DF 100%);
+$ik-tile-gradient: linear-gradient(133.46deg, #E563A6 0%, #7845CF 114.47%);
+
+$ik-page-max-width: 1440px;
+$ik-content-gutter: 86px;
+$ik-radius-sm: 8px;
+$ik-radius-md: 10px;
+$ik-radius-lg: 14px;
+
+@mixin ik-content-width {
+  width: calc(100% - #{$ik-content-gutter * 2});
+  max-width: calc(#{$ik-page-max-width} - #{$ik-content-gutter * 2});
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@mixin ik-primary-button {
+  border: 1px solid $ik-primary;
+  background: $ik-primary;
+  color: #ffffff;
+  font-family: $ik-font-family;
+  font-weight: 700;
+  cursor: pointer;
+
+  &:hover {
+    background: $ik-primary-hover;
+    border-color: $ik-primary-hover;
+  }
+}
+
+// Global Typography System
+@mixin ik-page-hero-title {
+  font-family: $ik-font-family;
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 36px;
+  letter-spacing: -0.2px;
+}
+
+@mixin ik-section-title {
+  font-family: $ik-font-family;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 26px;
+  color: #1F1F1F;
+}
+
+@mixin ik-card-heading {
+  font-family: $ik-font-family;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 24px;
+  letter-spacing: -0.1px;
+  color: #2A2A2A;
+}
+
+@mixin ik-body-text {
+  font-family: $ik-font-family;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  color: #6F6F6F;
+}
+
+@mixin ik-nav-menu-item {
+  font-family: $ik-font-family;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 20px;
+  color: #3A3A3A;
+}
+
+@mixin ik-button-text {
+  font-family: $ik-font-family;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+  letter-spacing: 0.2px;
+  text-transform: none;
+}

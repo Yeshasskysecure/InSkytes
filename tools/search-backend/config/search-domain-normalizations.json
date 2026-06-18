@@ -1,0 +1,28 @@
+{
+  "phraseNormalizations": [
+    { "pattern": "\\bovary\\s+cancer\\b", "replacement": "ovarian cancer" },
+    { "pattern": "\\bovary\\s+carcinoma\\b", "replacement": "ovarian carcinoma" },
+    { "pattern": "\\boperatons\\b", "replacement": "operations" },
+    { "pattern": "\\bpharmcovigilance\\b", "replacement": "pharmacovigilance" },
+    { "pattern": "\\bpharmacovigiliance\\b", "replacement": "pharmacovigilance" },
+    { "pattern": "\\bpharmacovigillance\\b", "replacement": "pharmacovigilance" }
+  ],
+  "retrievalNormalizations": [
+    { "pattern": "\\boperatons\\b", "replacement": "operations" },
+    { "pattern": "\\bglobal\\s+operatons\\b", "replacement": "global operations" },
+    { "pattern": "\\bgastrci\\b", "replacement": "gastric" },
+    { "pattern": "\\bheor\\b", "replacement": "HEOR health economics outcomes research" },
+    { "pattern": "\\bprma\\b", "replacement": "PRMA pricing reimbursement market access" },
+    { "pattern": "\\bpharmcovigilance\\b", "replacement": "pharmacovigilance" },
+    { "pattern": "\\bpharmacovigiliance\\b", "replacement": "pharmacovigilance" },
+    { "pattern": "\\bpharmacovigillance\\b", "replacement": "pharmacovigilance" }
+  ],
+  "acronymSearchCores": [
+    { "pattern": "\\bpbrer\\b", "core": "PBRER" },
+    { "pattern": "\\bpader\\b", "core": "PADER" },
+    { "pattern": "\\bpsur\\b", "core": "PSUR" },
+    { "pattern": "\\bicsr\\b", "core": "ICSR" },
+    { "pattern": "\\brmp\\b", "core": "RMP" },
+    { "pattern": "\\bpv\\b", "core": "PV pharmacovigilance" }
+  ]
+}

@@ -1,0 +1,1045 @@
+import * as React from "react";
+import { createPortal } from "react-dom";
+import styles from "./FilterDropdown.module.scss";
+import { SPHttpClient, SPHttpClientResponse } from "@microsoft/sp-http";
+import { DocumentDetailPage } from "../../../pages/DocumentDetailPage/DocumentDetailPage";
+import { AzureOpenAIService, ISearchFilters } from "../../../services/AzureOpenAIService";
+import { subscribeToDocumentDataChanged } from "../../../services/documentChangeEvents";
+import {
+  AZURE_OPENAI_ENDPOINT,
+  AZURE_OPENAI_API_KEY,
+  AZURE_OPENAI_DEPLOYMENT,
+} from "../../../services/SearchConfig";
+import { DocumentParser } from "../../../services/DocumentParser";
+import { getDocumentMetricsBatch } from "../../../services/kmMetricsService";
+import { LIBRARY_NAMES } from "../../../config/appConfig";
+
+export interface IFilterDropdownProps {
+  searchText: string;
+  spHttpClient: SPHttpClient;
+  siteUrl: string; // e.g. https://indegenedevelopment.sharepoint.com/sites/KnowledgeHub
+  context: any;    // same WebPartContext you pass to QuestionSection
+  isLearner?: boolean;
+}
+
+type FilterChild = { title: string; count?: number };
+type FilterGroup = { title: string; count?: number; children?: FilterChild[] };
+
+type ResultItem = {
+  id: number;              // list item Id
+  title: string;            // Document Title (from SharePoint Title field)
+  fileName: string;         // Actual filename (FileLeafRef)
+  contributor: string;
+  updated: string;
+  description: string;     // Abstract
+  fileUrl?: string;
+  fileType?: string;
+  serverRelativeUrl?: string; // FileRef for download API
+  businessUnit?: string;   // Business Unit from SharePoint
+  documentType?: string;   // Document Type from SharePoint
+  client?: string;         // Client from SharePoint
+  region?: string;         // Region from SharePoint
+  therapyArea?: string;    // Therapy Area from SharePoint
+  diseaseArea?: string;    // Disease Area from SharePoint
+  status?: string;         // Status from SharePoint (Published, Draft, Unpublished, Rejected, etc.)
+  viewCount?: number;
+  likeCount?: number;
+  commentCount?: number;
+  shareCount?: number;
+};
+
+const filterData: FilterGroup[] = [
+  {
+    title: "Business Unit",
+    count: 3500,
+    children: [
+      { title: "Enterprise Medical", count: 199 },
+      { title: "Marketing and Inside Sales", count: 58 },
+      { title: "Enterprise Commercial", count: 64 },
+      { title: "Sales Life Sciences", count: 36 },
+      { title: "Medical Devices", count: 23 }
+    ]
+  },
+  {
+    title: "Document Type",
+    count: 1509,
+    children: [
+      { title: "RFIs/RFP", count: 189 },
+      { title: "Capability", count: 67 },
+      { title: "Case Studies", count: 45 }
+    ]
+  },
+  { title: "Client", count: 1200, children: [{ title: "Pfizer", count: 12 }, { title: "Novartis", count: 8 }, { title: "Bayer", count: 5 }] },
+  { title: "Region", count: 800, children: [{ title: "North America", count: 450 }, { title: "Europe", count: 210 }, { title: "APAC", count: 140 }] },
+  { title: "Therapy Area" },
+  { title: "Disease Area" },
+  {
+    title: "File Format",
+    children: [
+      { title: "PDF", count: 156 },
+      { title: "DOCX", count: 89 },
+      { title: "PPTX", count: 45 },
+      { title: "XLSX", count: 23 },
+    ],
+  },
+];
+
+const FilterDropdown: React.FC<IFilterDropdownProps> = ({
+  searchText,
+  spHttpClient,
+  siteUrl,
+  context,
+  isLearner = false,
+}) => {
+  const [openGroup, setOpenGroup] = React.useState<string | null>(null);
+  const [activeTab, setActiveTab] =
+    React.useState<"documents" | "experts">("documents");
+
+  const [documents, setDocuments] = React.useState<ResultItem[]>([]);
+  const [documentsRefreshKey, setDocumentsRefreshKey] = React.useState<number>(0);
+  const [semanticSearchResults, setSemanticSearchResults] = React.useState<ResultItem[]>([]);
+  // Cache for document content to avoid re-extracting on every search
+  const documentContentCache = React.useRef<Map<number, string>>(new Map());
+  const workspaceRef = React.useRef<HTMLDivElement>(null);
+
+  const [experts] = React.useState<ResultItem[]>(() =>
+    Array.from({ length: 6 }).map((_, i) => ({
+      id: i,
+      title: `Expert ${i + 1}`,
+      fileName: `expert-${i + 1}.pdf`,
+      contributor: `Role ${i + 1}`,
+      updated: "Nov 20, 2025",
+      description: "Expert profile placeholder.",
+    }))
+  );
+
+  const [isLoading, setIsLoading] = React.useState<boolean>(false);
+  const [error, setError] = React.useState<string | null>(null);
+
+  /* ---------------------------------------------
+     Semantic Search Service Instance
+  --------------------------------------------- */
+  const openAIServiceRef = React.useRef<AzureOpenAIService | null>(null);
+
+  React.useEffect(() => {
+    if (!openAIServiceRef.current) {
+      openAIServiceRef.current = new AzureOpenAIService({
+        apiKey: AZURE_OPENAI_API_KEY,
+        endpoint: AZURE_OPENAI_ENDPOINT,
+        deploymentName: AZURE_OPENAI_DEPLOYMENT,
+      });
+    }
+  }, []);
+
+  /* ---------------------------------------------
+     Document Preview State (same as QuestionSection)
+  --------------------------------------------- */
+  const [selectedDocumentId, setSelectedDocumentId] =
+    React.useState<number | null>(null);
+
+  /* ---------------------------------------------
+     Front-end filter states
+  --------------------------------------------- */
+  const [selectedFormat, setSelectedFormat] = React.useState<string | null>(null);
+  const [selectedBusinessUnit, setSelectedBusinessUnit] = React.useState<string | null>(null);
+  const [selectedDocumentType, setSelectedDocumentType] = React.useState<string | null>(null);
+  const [selectedClient, setSelectedClient] = React.useState<string | null>(null);
+  const [selectedRegion, setSelectedRegion] = React.useState<string | null>(null);
+  const [selectedTherapyArea, setSelectedTherapyArea] = React.useState<string | null>(null);
+  const [selectedDiseaseArea, setSelectedDiseaseArea] = React.useState<string | null>(null);
+
+  const toggleGroup = (title: string) =>
+    setOpenGroup(openGroup === title ? null : title);
+
+  const handleFormatClick = (formatTitle: string) => {
+    const fmt = formatTitle.toLowerCase();
+    setSelectedFormat((prev) => (prev === fmt ? null : fmt)); // toggle
+    setOpenGroup(null);
+  };
+
+  const handleFilterClick = (filterType: string, value: string) => {
+    switch (filterType) {
+      case "Business Unit":
+        setSelectedBusinessUnit((prev) => (prev === value ? null : value));
+        break;
+      case "Document Type":
+        setSelectedDocumentType((prev) => (prev === value ? null : value));
+        break;
+      case "Client":
+        setSelectedClient((prev) => (prev === value ? null : value));
+        break;
+      case "Region":
+        setSelectedRegion((prev) => (prev === value ? null : value));
+        break;
+      case "Therapy Area":
+        setSelectedTherapyArea((prev) => (prev === value ? null : value));
+        break;
+      case "Disease Area":
+        setSelectedDiseaseArea((prev) => (prev === value ? null : value));
+        break;
+    }
+    setOpenGroup(null);
+  };
+
+  /* ---------- Helpers for file type & icon (for tiles) ---------- */
+
+  const getFileTypeFromName = (fileName: string | undefined): string => {
+    if (!fileName) return "FILE";
+    const parts = fileName.split(".");
+    if (parts.length < 2) return "FILE";
+    return parts.pop()!.toUpperCase();
+  };
+
+  const getFileTypeIcon = (type: string | undefined) => {
+    if (!type) return "📎";
+    const t = type.toLowerCase();
+    if (t.includes("pdf")) return "📄";
+    if (t.includes("ppt")) return "📊";
+    if (t.includes("xls")) return "📈";
+    if (t.includes("doc")) return "📝";
+    return "📎";
+  };
+
+  /* ======================================================
+     Load documents from KM Data Hub LIST (like QuestionSection)
+  ====================================================== */
+  const fetchDocumentStats = React.useCallback(
+    async (docIds: number[]) => {
+      const stats: Record<number, { likeCount: number; commentCount: number; viewCount: number }> = {};
+
+      try {
+        const metricsByDocumentId = await getDocumentMetricsBatch(context, docIds);
+
+        docIds.forEach((docId) => {
+          const metrics = metricsByDocumentId[docId];
+          stats[docId] = {
+            likeCount: metrics?.likes || 0,
+            commentCount: metrics?.comments || 0,
+            viewCount: metrics?.views || 0,
+          };
+        });
+      } catch (err) {
+        console.error("Error fetching document stats", err);
+        // Provide defaults if fetch fails
+        docIds.forEach((docId) => {
+          stats[docId] = { likeCount: 0, commentCount: 0, viewCount: 0 };
+        });
+      }
+
+      return stats;
+    },
+    [siteUrl, spHttpClient]
+  );
+
+  React.useEffect(() => {
+    return subscribeToDocumentDataChanged(() => {
+      setDocumentsRefreshKey((value) => value + 1);
+    });
+  }, []);
+
+  React.useEffect(() => {
+    if (activeTab !== "documents") return;
+
+    const fetchDocuments = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        const libraryName = LIBRARY_NAMES.kmDataHub;
+
+        const apiUrl =
+          `${siteUrl}/_api/web/lists/getbytitle('${libraryName}')/items` +
+          `?$select=Id,Title,TitleName,Description,FileLeafRef,FileRef,Author/Title,Created,BU,BusinessUnit,DocumentType,Client,Region,TherapyArea,DiseaseArea,Status` +
+          `&$expand=Author` +
+          `&$filter=Status eq 'Active'`;
+
+        const response: SPHttpClientResponse = await spHttpClient.get(
+          apiUrl,
+          SPHttpClient.configurations.v1
+        );
+
+        if (!response.ok) {
+          throw new Error(`HTTP error ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        const docs: ResultItem[] = (data.value || [])
+          .map((item: any) => {
+            // Extract just the filename from FileLeafRef (which might include path)
+            const fileLeafRef = item.FileLeafRef || "";
+            const fileName = fileLeafRef.split('/').pop() || fileLeafRef || "Untitled";
+            const fileType = getFileTypeFromName(fileName);
+            // Always use TitleName field from KM Data Hub as document title
+            // Check for TitleName first (trim whitespace), then fallback to Title, then filename without extension
+            // Ensure we always have a title - never show blank
+            // Handle all data types: string, number, null, undefined, empty string, and "-" (default from FileUpload)
+            let documentTitle = "";
+
+            // Try TitleName first - convert to string if needed, handle all edge cases
+            // Note: FileUpload sets TitleName to "-" when no title is provided, so treat "-" as empty
+            const titleNameValue = item.TitleName;
+            if (titleNameValue != null && titleNameValue !== undefined && titleNameValue !== '' && titleNameValue !== '-') {
+              const titleNameStr = String(titleNameValue).trim();
+              // Check if it's not just "-" or empty after trim
+              if (titleNameStr.length > 0 && titleNameStr !== '-') {
+                documentTitle = titleNameStr;
+              }
+            }
+
+            // Fallback to Title if TitleName is not available, empty, or "-"
+            if (!documentTitle) {
+              const titleValue = item.Title;
+              if (titleValue != null && titleValue !== undefined && titleValue !== '' && titleValue !== '-') {
+                const titleStr = String(titleValue).trim();
+                if (titleStr.length > 0 && titleStr !== '-') {
+                  documentTitle = titleStr;
+                }
+              }
+            }
+
+            // Fallback to filename without extension (should always exist)
+            if (!documentTitle && fileName && fileName.length > 0) {
+              const nameWithoutExt = fileName.split('.').slice(0, -1).join('.');
+              documentTitle = nameWithoutExt || fileName;
+            }
+
+            // Last resort fallback
+            if (!documentTitle) {
+              documentTitle = "Untitled Document";
+            }
+
+            // Debug logging for XLSX files to troubleshoot title issues
+            if (fileType === 'XLSX') {
+              console.log(`[XLSX Debug] File: ${fileName}`, {
+                TitleName: item.TitleName,
+                Title: item.Title,
+                FinalTitle: documentTitle,
+                TitleNameType: typeof item.TitleName,
+                TitleType: typeof item.Title
+              });
+            }
+
+
+            return {
+              id: item.Id,
+              title: documentTitle, // Document Title (from SharePoint Title field) - always shown
+              fileName: fileName,   // Actual filename (extracted from FileLeafRef) - always shown
+              contributor: item.Author?.Title || "Unknown",
+              updated: item.Created
+                ? new Date(item.Created).toLocaleString()
+                : "",
+              description: item.Description || "No description available",
+              fileUrl: item.FileRef
+                ? `${window.location.origin}${item.FileRef}`
+                : undefined,
+              fileType,
+              serverRelativeUrl: item.FileRef || "",
+              businessUnit: item.BU || item.BusinessUnit || undefined,
+              documentType: item.DocumentType || undefined,
+              client: item.Client || undefined,
+              region: item.Region || undefined,
+              therapyArea: item.TherapyArea || undefined,
+              diseaseArea: item.DiseaseArea || undefined,
+              status: item.Status || undefined,
+              viewCount: 0, // Will be updated with actual count
+              likeCount: 0,       // Will be updated with actual count
+              commentCount: 0,    // Will be updated with actual count
+              shareCount: Math.floor(Math.random() * 10),     // Mock data
+            };
+          })
+          // Client-side safety filter: Only include Active documents
+          // This ensures Draft, Unpublished, Rejected, and any other statuses are excluded
+          .filter((doc) => doc.status === "Active");
+
+        // Fetch actual stats for all documents
+        const docIds = docs.map(d => d.id);
+        const stats = await fetchDocumentStats(docIds);
+
+        // Update documents with actual stats
+        const docsWithStats = docs.map(doc => ({
+          ...doc,
+          ...(stats[doc.id] || { likeCount: 0, commentCount: 0, viewCount: 0 })
+        }));
+
+        setDocuments(docsWithStats);
+      } catch (err: any) {
+        console.error("Error fetching documents", err);
+        setError(err.message || "Failed to load documents");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDocuments();
+  }, [activeTab, siteUrl, spHttpClient, fetchDocumentStats, documentsRefreshKey]);
+
+  /* ======================================================
+     Search + All Filters
+  ====================================================== */
+  const hasSearch = searchText.trim().length > 0;
+  const hasFormat = !!selectedFormat;
+  const hasBusinessUnit = !!selectedBusinessUnit;
+  const hasDocumentType = !!selectedDocumentType;
+  const hasClient = !!selectedClient;
+  const hasRegion = !!selectedRegion;
+  const hasTherapyArea = !!selectedTherapyArea;
+  const hasDiseaseArea = !!selectedDiseaseArea;
+
+  const hasAnyFilter = hasSearch || hasFormat || hasBusinessUnit || hasDocumentType ||
+    hasClient || hasRegion || hasTherapyArea || hasDiseaseArea;
+
+  /* ======================================================
+     Semantic Search Integration on KM Data Hub Documents
+  ====================================================== */
+  React.useEffect(() => {
+    // Only perform semantic search for documents tab when there's a search query
+    if (activeTab !== "documents" || !hasSearch || !openAIServiceRef.current || documents.length === 0) {
+      // For non-search filters or experts tab, use client-side filtering
+      setSemanticSearchResults([]);
+      return;
+    }
+
+    const performSemanticSearch = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        // First, apply server-side filters to reduce the document set
+        let filteredDocs = documents;
+
+        // Apply filters...
+        if (selectedBusinessUnit) {
+          filteredDocs = filteredDocs.filter(
+            (doc) => doc.businessUnit && doc.businessUnit.trim() === selectedBusinessUnit.trim()
+          );
+        }
+        if (selectedDocumentType) {
+          filteredDocs = filteredDocs.filter(
+            (doc) => doc.documentType && doc.documentType.trim() === selectedDocumentType.trim()
+          );
+        }
+        if (selectedClient) {
+          filteredDocs = filteredDocs.filter(
+            (doc) => doc.client && doc.client.trim() === selectedClient.trim()
+          );
+        }
+        if (selectedRegion) {
+          filteredDocs = filteredDocs.filter(
+            (doc) => doc.region && doc.region.trim() === selectedRegion.trim()
+          );
+        }
+        if (selectedFormat) {
+          filteredDocs = filteredDocs.filter(
+            (doc) => doc.fileType && doc.fileType.toLowerCase() === selectedFormat.toLowerCase()
+          );
+        }
+        if (selectedTherapyArea) {
+          filteredDocs = filteredDocs.filter(
+            (doc) => doc.therapyArea && doc.therapyArea.trim() === selectedTherapyArea.trim()
+          );
+        }
+        if (selectedDiseaseArea) {
+          filteredDocs = filteredDocs.filter(
+            (doc) => doc.diseaseArea && doc.diseaseArea.trim() === selectedDiseaseArea.trim()
+          );
+        }
+
+        // If no documents after filtering, return empty
+        if (filteredDocs.length === 0) {
+          setSemanticSearchResults([]);
+          setIsLoading(false);
+          return;
+        }
+
+        // Extract content logic...
+        const batchSize = 10;
+        const allDocsWithContent: Array<{
+          id: number;
+          title: string;
+          fileName: string;
+          description: string;
+          contributor: string;
+          documentContent: string;
+          [key: string]: any;
+        }> = [];
+
+        for (let i = 0; i < filteredDocs.length; i += batchSize) {
+          const batch = filteredDocs.slice(i, i + batchSize);
+
+          const batchResults = await Promise.all(
+            batch.map(async (doc) => {
+              let documentContent = documentContentCache.current.get(doc.id);
+
+              if (!documentContent && doc.serverRelativeUrl && doc.fileType) {
+                const supportedTypes = ['PDF', 'DOCX', 'PPTX', 'XLSX', 'XLSM', 'XLS', 'XLSB', 'XLTX', 'XLTM', 'CSV', 'TXT', 'MHTML', 'MHT', 'SVG'];
+                if (supportedTypes.includes(doc.fileType.toUpperCase())) {
+                  try {
+                    const fileUrl = `${siteUrl}/_api/web/GetFileByServerRelativeUrl('${doc.serverRelativeUrl}')/$value`;
+                    const fileResponse = await spHttpClient.get(fileUrl, SPHttpClient.configurations.v1);
+
+                    if (fileResponse.ok) {
+                      const blob = await fileResponse.blob();
+                      const file = new File([blob], doc.fileName, { type: blob.type });
+                      const parseResult = await DocumentParser.parseFile(file);
+                      if (parseResult.success && parseResult.text) {
+                        const fullText = parseResult.text;
+                        documentContent = fullText;
+                        documentContentCache.current.set(doc.id, documentContent);
+                      }
+                    }
+                  } catch (err) {
+                    console.warn(`Could not extract content for document ${doc.id}:`, err);
+                  }
+                }
+              }
+
+              return {
+                id: doc.id,
+                title: doc.title,
+                fileName: doc.fileName,
+                description: doc.description,
+                contributor: doc.contributor,
+                documentContent: documentContent || '',
+                businessUnit: doc.businessUnit || '',
+                documentType: doc.documentType || '',
+                client: doc.client || '',
+                region: doc.region || '',
+                therapyArea: doc.therapyArea || '',
+                diseaseArea: doc.diseaseArea || '',
+                ...doc,
+              };
+            })
+          );
+
+          allDocsWithContent.push(...batchResults);
+        }
+
+        const semanticResults = await openAIServiceRef.current.semanticSearchLocalDocuments(
+          searchText,
+          allDocsWithContent,
+          100
+        );
+
+        const mappedResults: ResultItem[] = semanticResults
+          .map((result) => result.document)
+          .filter((doc) => doc.status === "Active");
+
+        setSemanticSearchResults(mappedResults);
+      } catch (err: any) {
+        console.error("Semantic search error:", err);
+        setSemanticSearchResults([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    const timeoutId = setTimeout(performSemanticSearch, 800);
+    return () => clearTimeout(timeoutId);
+  }, [
+    searchText,
+    hasSearch,
+    activeTab,
+    documents,
+    selectedBusinessUnit,
+    selectedDocumentType,
+    selectedClient,
+    selectedRegion,
+    selectedFormat,
+    selectedTherapyArea,
+    selectedDiseaseArea,
+  ]);
+
+  /* ======================================================
+     Client-side filtering
+  ====================================================== */
+  const filteredItems = React.useMemo(() => {
+    if (!hasAnyFilter) return [];
+
+    if (hasSearch && activeTab === "documents" && semanticSearchResults.length > 0) {
+      return semanticSearchResults;
+    }
+
+    const baseItems = activeTab === "documents" ? documents : experts;
+    const keyword = searchText.toLowerCase();
+    const fmt = selectedFormat;
+
+    return baseItems.filter((item) => {
+      const textMatch =
+        item.title.toLowerCase().includes(keyword) ||
+        item.contributor.toLowerCase().includes(keyword) ||
+        item.description.toLowerCase().includes(keyword);
+
+      const matchesSearch = !hasSearch || textMatch;
+
+      const matchesFormat =
+        !fmt ||
+        (activeTab === "documents" &&
+          item.fileType &&
+          item.fileType.toLowerCase() === fmt);
+
+      const matchesBusinessUnit =
+        !selectedBusinessUnit ||
+        (activeTab === "documents" &&
+          item.businessUnit &&
+          item.businessUnit.trim() === selectedBusinessUnit.trim());
+
+      const matchesDocumentType =
+        !selectedDocumentType ||
+        (activeTab === "documents" &&
+          item.documentType &&
+          item.documentType.trim() === selectedDocumentType.trim());
+
+      const matchesClient =
+        !selectedClient ||
+        (activeTab === "documents" &&
+          item.client &&
+          item.client.trim() === selectedClient.trim());
+
+      const matchesRegion =
+        !selectedRegion ||
+        (activeTab === "documents" &&
+          item.region &&
+          item.region.trim() === selectedRegion.trim());
+
+      const matchesTherapyArea =
+        !selectedTherapyArea ||
+        (activeTab === "documents" &&
+          item.therapyArea &&
+          item.therapyArea.trim() === selectedTherapyArea.trim());
+
+      const matchesDiseaseArea =
+        !selectedDiseaseArea ||
+        (activeTab === "documents" &&
+          item.diseaseArea &&
+          item.diseaseArea.trim() === selectedDiseaseArea.trim());
+
+      const matchesStatus =
+        activeTab !== "documents" ||
+        (item.status && item.status === "Active");
+
+      return matchesSearch && matchesFormat && matchesBusinessUnit &&
+        matchesDocumentType && matchesClient && matchesRegion &&
+        matchesTherapyArea && matchesDiseaseArea && matchesStatus;
+    });
+  }, [
+    hasAnyFilter,
+    hasSearch,
+    searchText,
+    documents,
+    experts,
+    activeTab,
+    selectedFormat,
+    selectedBusinessUnit,
+    selectedDocumentType,
+    selectedClient,
+    selectedRegion,
+    selectedTherapyArea,
+    selectedDiseaseArea,
+    semanticSearchResults,
+  ]);
+
+  /* ======================================================
+     Document Action Handlers
+  ====================================================== */
+  const handleView = (item: ResultItem) => {
+    setSelectedDocumentId(item.id);
+  };
+
+  const handleCloseDetail = () => {
+    setSelectedDocumentId(null);
+  };
+
+  // Show results section even without filters - it will show filtered items or a prompt
+  // Removed the early return so users see results immediately when they select a filter
+
+  const handleDownload = async (item: ResultItem) => {
+    try {
+      if (!item.serverRelativeUrl) return;
+      const downloadUrl = `${siteUrl}/_api/web/GetFileByServerRelativeUrl('${item.serverRelativeUrl}')/$value`;
+      const resp = await spHttpClient.get(downloadUrl, SPHttpClient.configurations.v1);
+
+      if (resp.ok) {
+        const blob = await resp.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = item.fileName || item.title || "download";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+      }
+    } catch (e) {
+      console.error("Download failed:", e);
+    }
+  };
+
+  /* ======================================================
+     Dynamic Filter Counting
+  ====================================================== */
+  const dynamicFilterData = React.useMemo(() => {
+    // Clone the static structure
+    const newData = JSON.parse(JSON.stringify(filterData)) as FilterGroup[];
+
+    // Tally counts from ALL documents (not just filtered ones)
+    const counts: Record<string, Record<string, number>> = {
+      "Business Unit": {},
+      "Document Type": {},
+      "Client": {},
+      "Region": {},
+      "Therapy Area": {},
+      "Disease Area": {},
+      "File Format": {}
+    };
+
+    documents.forEach(doc => {
+      const inc = (category: string, val?: string) => {
+        if (!val) return;
+        const v = val.trim();
+        if (!counts[category][v]) counts[category][v] = 0;
+        counts[category][v]++;
+      };
+
+      inc("Business Unit", doc.businessUnit);
+      inc("Document Type", doc.documentType);
+      inc("Client", doc.client);
+      inc("Region", doc.region);
+      inc("Therapy Area", doc.therapyArea);
+      inc("Disease Area", doc.diseaseArea);
+      if (doc.fileType) inc("File Format", doc.fileType.toUpperCase());
+    });
+
+    newData.forEach(group => {
+      const categoryCounts = counts[group.title];
+      if (categoryCounts && group.children) {
+        let totalGroupCount = 0;
+        group.children.forEach(child => {
+          const key = Object.keys(categoryCounts).find(k => k.toLowerCase() === child.title.toLowerCase());
+          const c = key ? categoryCounts[key] : 0;
+          child.count = c;
+          totalGroupCount += c;
+        });
+        group.count = totalGroupCount;
+      }
+    });
+
+    return newData;
+  }, [documents]);
+
+  return (
+    <>
+      <div className={styles.workspace} ref={workspaceRef}>
+        <div className={styles.sidebarContainer}>
+          {/* Left Filter Sidebar */}
+          <aside className={styles.wrapper}>
+            <div className={styles.railHeader}>Refine using filters by:</div>
+
+            <nav className={styles.container}>
+              {dynamicFilterData.map((group) => {
+                const hasChildren = !!group.children;
+                const isOpen = openGroup === group.title;
+
+                return (
+                  <div key={group.title}>
+                    <button
+                      className={`${styles.parentBtn} ${isOpen ? styles.rootBtnOpen : ""}`}
+                      onClick={() => toggleGroup(group.title)}
+                    >
+                      <span>{group.title}</span>
+                      {hasChildren && (
+                        <span className={styles.chevron}>
+                          {isOpen ? "▲" : "▼"}
+                        </span>
+                      )}
+                    </button>
+
+                    {isOpen && hasChildren && (
+                      <div className={styles.childList}>
+                        {group.children!.map((child) => {
+                          const isActive =
+                            (group.title === "File Format" && selectedFormat === child.title.toLowerCase()) ||
+                            (group.title === "Business Unit" && selectedBusinessUnit === child.title) ||
+                            (group.title === "Document Type" && selectedDocumentType === child.title) ||
+                            (group.title === "Client" && selectedClient === child.title) ||
+                            (group.title === "Region" && selectedRegion === child.title) ||
+                            (group.title === "Therapy Area" && selectedTherapyArea === child.title) ||
+                            (group.title === "Disease Area" && selectedDiseaseArea === child.title);
+
+                          return (
+                            <button
+                              key={child.title}
+                              className={`${styles.childBtn} ${isActive ? styles.childBtnActive : ""}`}
+                              onClick={() => {
+                                if (group.title === "File Format") {
+                                  handleFormatClick(child.title);
+                                } else {
+                                  handleFilterClick(group.title, child.title);
+                                }
+                              }}
+                            >
+                              <span className={styles.childTitle}>{child.title}</span>
+                              {child.count !== undefined && <span className={styles.childCount}>{child.count}</span>}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </nav>
+          </aside>
+
+          {/* Main Content */}
+          <main className={styles.main}>
+            {/* Tabs */}
+            <div className={styles.tabs}>
+              <button
+                className={`${styles.tab} ${activeTab === "documents" ? styles.active : ""}`}
+                onClick={() => setActiveTab("documents")}
+              >
+                Documents
+              </button>
+              <button
+                className={`${styles.tab} ${activeTab === "experts" ? styles.active : ""}`}
+                onClick={() => setActiveTab("experts")}
+              >
+                Experts
+              </button>
+            </div>
+
+            {/* Results */}
+            <section className={styles.results}>
+              {!hasAnyFilter && !isLoading && (
+                <div style={{
+                  padding: "40px 20px",
+                  textAlign: "center",
+                  color: "#666",
+                  fontSize: "16px"
+                }}>
+                  <p>👉 Select a filter above to see documents</p>
+                  <p style={{ fontSize: "14px", marginTop: "10px", color: "#999" }}>
+                    Use filters like File Format, Business Unit, Document Type, etc.
+                  </p>
+                </div>
+              )}
+
+              {isLoading && (
+                <div className={styles.loadingContainer}>
+                  <div className={styles.spinner}></div>
+                  <p className={styles.loadingText}>Loading documents…</p>
+                </div>
+              )}
+              {error && <p style={{ color: "red" }}>Error: {error}</p>}
+
+              {!isLoading && !error && hasAnyFilter && (
+                // Scrollable container - Horizontal Scroll
+                <div className={styles.scrollContainer}>
+                  <div className={styles.list}>
+                    {filteredItems.length === 0 ? (
+                      <p style={{ color: "black" }}>No results found for selected filters.</p>
+                    ) : (
+                      filteredItems.map((item) =>
+                        activeTab === "documents" ? (
+                          /* ================= Document tile ================ */
+                          <div key={item.id} className={styles.tile}>
+                            <div className={styles.tileHeader}>
+                              <span className={styles.fileTypeIcon}>
+                                {getFileTypeIcon(item.fileType)}
+                              </span>
+                              <span className={styles.fileType}>
+                                {item.fileType || "FILE"}
+                              </span>
+                            </div>
+
+                            <div className={styles.tileContent}>
+                              <div className={styles.fileName}>{item.fileName || "No filename"}</div>
+                              <h3 className={styles.tileTitle}>
+                                {item.title && item.title !== '-'
+                                  ? item.title
+                                  : (item.fileName?.split('.').slice(0, -1).join('.') || "Untitled Document")}
+                              </h3>
+
+                              <div className={styles.tileMeta}>
+                                <span className={styles.metaLabel}>
+                                  Contributor:
+                                </span>
+                                <span className={styles.metaValue}>
+                                  {item.contributor}
+                                </span>
+                              </div>
+
+                              <div className={styles.tileMeta}>
+                                <span className={styles.metaLabel}>Updated:</span>
+                                <span className={styles.metaValue}>
+                                  {item.updated}
+                                </span>
+                              </div>
+
+                              <p className={styles.tileAbstract}>
+                                {item.description || "No abstract available"}
+                              </p>
+                            </div>
+
+                            <div className={styles.tileFooter}>
+                              <div className={styles.socialStats}>
+                                <span className={styles.statItem} title="Views">
+                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                    <circle cx="12" cy="12" r="3" />
+                                  </svg>
+                                  {item.viewCount || 0}
+                                </span>
+                                <span className={styles.statItem} title="Comments">
+                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+                                  </svg>
+                                  {item.commentCount || 0}
+                                </span>
+                                <span className={styles.statItem} title="Likes">
+                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                                  </svg>
+                                  {item.likeCount || 0}
+                                </span>
+                              </div>
+                              <div className={styles.tileActions}>
+                                <button
+                                  className={styles.viewButton}
+                                  onClick={() => handleView(item)}
+                                >
+                                  View
+                                </button>
+                                {!isLearner && (
+                                  <button
+                                    className={styles.downloadButton}
+                                    onClick={() => handleDownload(item)}
+                                  >
+                                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                      <polyline points="7 10 12 15 17 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                      <line x1="12" y1="15" x2="12" y2="3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          /* ================= Experts card ================ */
+                          <article key={item.id} className={styles.card}>
+                            <h4 className={styles.cardTitle}>{item.title}</h4>
+
+                            <div className={styles.cardRow}>
+                              <span className={styles.cardLabel}>Role</span>
+                              <span className={styles.cardValue}>
+                                {item.contributor}
+                              </span>
+                            </div>
+
+                            <div className={styles.cardRow}>
+                              <span className={styles.cardLabel}>Updated</span>
+                              <span className={styles.cardValue}>
+                                {item.updated}
+                              </span>
+                            </div>
+
+                            <div className={styles.cardRow}>
+                              <span className={styles.cardLabel}>
+                                Description
+                              </span>
+                              <span className={styles.cardValue}>
+                                {item.description}
+                              </span>
+                            </div>
+                          </article>
+                        )
+                      )
+                    )}
+                  </div>
+                </div>
+              )}
+            </section>
+          </main>
+
+          {/* Right Quick Links */}
+          <aside className={styles.rightRail}>
+            <h3 className={styles.quickLinksTitle}>Quick Links</h3>
+            <ul className={styles.quickLinksList}>
+              <li>
+                <a
+                  href="https://www.indegene.com/who-we-are/about-us"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={styles.quickLink}
+                >
+                  About Us
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://ir.indegene.com/media/a4fl0eab/policy-on-preservation-of-records-archival-policy-on-website.pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={styles.quickLink}
+                >
+                  Retention Policy
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://www.indegene.com/privacy-policy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={styles.quickLink}
+                >
+                  Privacy Policy
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://www.indegene.com/contact-us"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={styles.quickLink}
+                >
+                  Contact Us
+                </a>
+              </li>
+            </ul>
+          </aside>
+        </div>
+      </div>
+
+      {/* ======================= Document Detail Page (Portal to body) ======================== */}
+      {selectedDocumentId &&
+        context &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            className={styles.detailModal}
+            data-testid="modal-backdrop"
+            onClick={(e) => {
+              // Only close if clicking on the backdrop itself, not on any child elements
+              if ((e.target as HTMLElement).getAttribute('data-testid') === 'modal-backdrop') {
+                handleCloseDetail();
+              }
+            }}
+          >
+            <DocumentDetailPage
+              context={context}
+              documentId={selectedDocumentId}
+              onClose={handleCloseDetail}
+              backTo="library"
+              onBackToLibrary={handleCloseDetail}
+            />
+          </div>,
+          document.body
+        )}
+    </>
+  );
+};
+
+export default FilterDropdown;
+

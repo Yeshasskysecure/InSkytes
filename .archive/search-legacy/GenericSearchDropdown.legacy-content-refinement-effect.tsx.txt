@@ -1,0 +1,113 @@
+  React.useEffect(() => {
+    if (!hasSearch || usesKnowledgeSearchApiResults || preliminaryRankedDocuments.length === 0) {
+      setIsSearchLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadContentForTopResults = async () => {
+      const effectiveSearchQuery =
+        buildConversationalSearchCore(normalizeSearchWhitespace(activeSearchText || "")) ||
+        normalizeSearchWhitespace(activeSearchText || "");
+      const shouldBroadenContentRefinement =
+        shouldUseLocalContentFallback(effectiveSearchQuery) ||
+        /&/.test(effectiveSearchQuery);
+      const contentCandidateLimit = shouldBroadenContentRefinement ? 60 : 20;
+      const candidates = preliminaryRankedDocuments
+        .filter(
+          (item) =>
+            item.serverRelativeUrl &&
+            item.fileType &&
+            SUPPORTED_CONTENT_TYPES.has(item.fileType.toUpperCase()) &&
+            !getCachedDocumentContent(item)
+        )
+        .sort((left, right) => {
+          const nativeMatchDelta =
+            Number(Boolean(right.matchedByNativeSearch)) - Number(Boolean(left.matchedByNativeSearch));
+          if (nativeMatchDelta !== 0) {
+            return nativeMatchDelta;
+          }
+
+          return (right.rank || 0) - (left.rank || 0);
+        })
+        .slice(0, contentCandidateLimit);
+
+      if (candidates.length === 0) {
+        setIsSearchLoading(false);
+        return;
+      }
+
+      const loadCandidateContent = async (item: ResultItem): Promise<boolean> => {
+        try {
+          const response = await spHttpClient.get(
+            `${siteUrl}/_api/web/GetFileByServerRelativeUrl('${escapeODataValue(item.serverRelativeUrl || "")}')/$value`,
+            SPHttpClient.configurations.v1
+          );
+
+          if (!response.ok) {
+            return false;
+          }
+
+          const blob = await response.blob();
+          const file = new File([blob], item.fileName, { type: blob.type });
+          const parseResult = await DocumentParser.parseFile(file);
+          if (parseResult.success && parseResult.text) {
+            const previousValue = getCachedDocumentContent(item);
+            if (previousValue !== parseResult.text) {
+              setCachedDocumentContent(item, parseResult.text);
+              return true;
+            }
+          }
+        } catch (contentError) {
+          console.warn(`Unable to extract search content for item ${item.id}:`, contentError);
+        }
+
+        return false;
+      };
+
+      const loadCandidateBatch = async (items: ResultItem[]): Promise<boolean> => {
+        const updates = await Promise.all(items.map((item) => loadCandidateContent(item)));
+        return updates.some(Boolean);
+      };
+
+      const visibleCandidates = candidates.slice(0, VISIBLE_REFINEMENT_CANDIDATES);
+      const backgroundCandidates = candidates.slice(VISIBLE_REFINEMENT_CANDIDATES);
+
+      setIsSearchLoading(visibleCandidates.length > 0);
+
+      const visibleBatchUpdated = await loadCandidateBatch(visibleCandidates);
+      if (!cancelled && visibleBatchUpdated) {
+        setContentRevision((current) => current + 1);
+      }
+
+      if (!cancelled) {
+        setIsSearchLoading(false);
+      }
+
+      for (
+        let batchStart = 0;
+        batchStart < backgroundCandidates.length && !cancelled;
+        batchStart += BACKGROUND_REFINEMENT_BATCH_SIZE
+      ) {
+        const batch = backgroundCandidates.slice(
+          batchStart,
+          batchStart + BACKGROUND_REFINEMENT_BATCH_SIZE
+        );
+        const backgroundBatchUpdated = await loadCandidateBatch(batch);
+        if (!cancelled && backgroundBatchUpdated) {
+          setContentRevision((current) => current + 1);
+        }
+
+        if (!cancelled && batchStart + BACKGROUND_REFINEMENT_BATCH_SIZE < backgroundCandidates.length) {
+          await new Promise<void>((resolve) => window.setTimeout(resolve, 0));
+        }
+      }
+    };
+
+    void loadContentForTopResults();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeSearchText, getCachedDocumentContent, hasSearch, preliminaryRankedDocuments, setCachedDocumentContent, siteUrl, spHttpClient, usesKnowledgeSearchApiResults]);

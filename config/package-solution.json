@@ -1,0 +1,68 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/package-solution.schema.json",
+  "solution": {
+    "name": "sharepoint-migration-site-client-side-solution",
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "version": "1.0.0.1",
+    "includeClientSideAssets": true,
+    "skipFeatureDeployment": true,
+    "isDomainIsolated": false,
+    "developer": {
+      "name": "SkySecureTech",
+      "websiteUrl": "https://indegene123.sharepoint.com/sites/iKnowledgeNext",
+      "privacyUrl": "",
+      "termsOfUseUrl": "",
+      "mpnId": "Undefined-1.0.0"
+    },
+    "metadata": {
+      "shortDescription": {
+        "default": "SharePoint Migration Site Frontend"
+      },
+      "longDescription": {
+        "default": "Frontend solution for SharePoint Migration Test site"
+      },
+      "screenshotPaths": [],
+      "videoUrl": "",
+      "categories": []
+    },
+    "features": [
+      {
+        "title": "sharepoint-migration-site Feature",
+        "description": "The feature that activates elements of the sharepoint-migration-site solution.",
+        "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567891",
+        "version": "1.0.0.1",
+        "componentIds": [
+          "a1b2c3d4-e5f6-7890-abcd-ef1234567892",
+          "254ffe71-3748-4555-9be1-fecc7e3f7a0a",
+          "39959469-b4af-4db9-b36f-624dc4749a66"
+        ],
+        "assets": {
+          "elementManifests": [
+            "elements.xml"
+          ]
+        }
+      }
+    ],
+    "webApiPermissionRequests": [
+      {
+        "resource": "Microsoft Graph",
+        "scope": "GroupMember.Read.All"
+      },
+      {
+        "resource": "Microsoft Graph",
+        "scope": "User.ReadBasic.All"
+      },
+      {
+        "resource": "Microsoft Graph",
+        "scope": "Files.Read.All"
+      },
+      {
+        "resource": "Microsoft Graph",
+        "scope": "Mail.Send"
+      }
+    ]
+  },
+  "paths": {
+    "zippedPackage": "solution/sharepoint-migration-site.sppkg"
+  }
+}

@@ -1,0 +1,273 @@
+@import '../../styles/ikDesignTokens';
+.myBookmarks {
+  min-height: 100%;
+  background: linear-gradient(180deg, #f8fbff 0%, #f4f7fc 100%);
+  color: #183153;
+}
+
+.pageHeader {
+  padding: 28px 32px 12px;
+  border-bottom: 1px solid #d9e4f3;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(10px);
+}
+
+.pageTitle {
+  @include ik-page-hero-title;
+  margin: 0;
+  color: #0d2b57;
+}
+
+.pageSubtitle {
+  @include ik-card-heading;
+  margin: 8px 0 0;
+  color: #6882a9;
+}
+
+.content {
+  padding: 28px 32px 36px;
+}
+
+.toolbar {
+  display: grid;
+  grid-template-columns: minmax(260px, 1.5fr) repeat(3, minmax(160px, 0.8fr));
+  gap: 14px;
+  align-items: center;
+}
+
+.searchInput,
+.filterSelect {
+  @include ik-card-heading;
+  width: 100%;
+  min-height: 54px;
+  padding: 0 18px;
+  border-radius: 16px;
+  border: 1px solid #d8e2f2;
+  background: #fff;
+  color: #14345d;
+  box-shadow: 0 8px 24px rgba(88, 116, 164, 0.08);
+}
+
+.searchInput:focus,
+.filterSelect:focus {
+  outline: none;
+  border-color: #7d6bff;
+  box-shadow: 0 0 0 4px rgba(125, 107, 255, 0.12);
+}
+
+.statsBar {
+  @include ik-card-heading;
+  margin-top: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  color: #53709a;
+}
+
+.clearFiltersButton {
+  @include ik-body-text;
+  border: none;
+  background: transparent;
+  color: #6f56ff;
+  cursor: pointer;
+}
+
+.loading,
+.emptyState {
+  min-height: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.loading {
+  gap: 12px;
+  color: #5f7ea8;
+}
+
+.spinner {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 4px solid rgba(111, 86, 255, 0.14);
+  border-top-color: #6f56ff;
+  animation: spin 0.9s linear infinite;
+}
+
+.emptyIcon {
+  width: 64px;
+  height: 64px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 22px;
+  background: linear-gradient(135deg, rgba(255, 110, 163, 0.18) 0%, rgba(255, 124, 148, 0.28) 100%);
+  color: #ff739a;
+  margin-bottom: 20px;
+  box-shadow: 0 14px 30px rgba(255, 132, 167, 0.18);
+}
+
+.emptyTitle {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  color: #183153;
+}
+
+.emptyMessage {
+  @include ik-card-heading;
+  margin: 10px 0 0;
+  max-width: 360px;
+  color: #87a0c5;
+}
+
+.documentsList {
+  margin-top: 22px;
+  display: grid;
+  gap: 18px;
+}
+
+.documentCard {
+  display: grid;
+  grid-template-columns: minmax(0, 1.8fr) minmax(220px, 0.9fr) auto;
+  gap: 22px;
+  align-items: start;
+  padding: 22px 24px;
+  border: 1px solid #dbe5f3;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 16px 40px rgba(73, 106, 155, 0.1);
+}
+
+.documentMain {
+  min-width: 0;
+}
+
+.documentTitle {
+  margin: 0;
+  font-size: 21px;
+  font-weight: 800;
+  color: #0f2c57;
+}
+
+.documentDescription {
+  @include ik-body-text;
+  margin: 10px 0 0;
+  color: #607da6;
+}
+
+.tagRow {
+  margin-top: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.tag {
+  @include ik-body-text;
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #eef3ff 0%, #f7efff 100%);
+  color: #516c94;
+}
+
+.documentMeta {
+  display: grid;
+  gap: 12px;
+  padding: 4px 0;
+}
+
+.metaRow {
+  display: grid;
+  gap: 4px;
+}
+
+.metaLabel {
+  @include ik-body-text;
+  color: #879fc1;
+  text-transform: uppercase;
+}
+
+.metaValue {
+  @include ik-card-heading;
+  color: #193255;
+}
+
+.documentActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.viewButton {
+  @include ik-card-heading;
+  min-width: 112px;
+  min-height: 46px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #ff5ca8 0%, #5a35db 100%);
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 16px 30px rgba(108, 67, 232, 0.24);
+}
+
+.removeButton {
+  width: 46px;
+  height: 46px;
+  border: 1px solid #e2d5ff;
+  border-radius: 14px;
+  background: #fff;
+  color: #9157ff;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 1200px) {
+  .toolbar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .documentCard {
+    grid-template-columns: 1fr;
+  }
+
+  .documentActions {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 680px) {
+  .pageHeader,
+  .content {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  .toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .statsBar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}

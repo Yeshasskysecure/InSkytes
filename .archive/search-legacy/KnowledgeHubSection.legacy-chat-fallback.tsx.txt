@@ -1,0 +1,87 @@
+
+      if (!openAIServiceRef.current || !searchServiceRef.current || !configServiceRef.current) {
+        throw new Error("Services not initialized");
+      }
+
+      // Convert local ChatMessage to ExternalChatMessage
+      const serviceHistory: ExternalChatMessage[] = history.map(m => ({
+        sender: m.sender,
+        text: m.text,
+        timestamp: m.timestamp || new Date()
+      }));
+
+      // 1. Sync Active markers and retrieve document content in parallel.
+      const activeStatusPromise = refreshActiveStatus();
+      let retrievalPromise: Promise<ISearchResult[]> | null = null;
+      if (chatRetrievalServiceRef.current) {
+        updateStatus("Searching document content...");
+        retrievalPromise = chatRetrievalServiceRef.current
+          .retrieve(query, focusedDocumentsRef.current)
+          .then((retrieval) => retrieval.results);
+      }
+
+      const whosWhoLookupQuery = WhosWhoService.shouldSearch(query) && /\b(complete|respective|team|tean|tema|members?)\b/i.test(query)
+        ? `${query}\n\nPrevious context:\n${history.slice(-2).map((message) => message.text).join('\n')}`
+        : query;
+
+      const whosWhoPromise: Promise<string> = WhosWhoService.shouldSearch(query) && whosWhoServiceRef.current
+        ? Promise.race([
+          whosWhoServiceRef.current.search(whosWhoLookupQuery).then((result) => result.context),
+          new Promise<string>((resolve) => window.setTimeout(() => resolve(""), 2500))
+        ]).catch((error) => {
+          console.warn("Who's Who context lookup failed quietly:", error);
+          return "";
+        })
+        : Promise.resolve("");
+
+      const [, retrievalResults, whosWhoContext] = await Promise.all([
+        activeStatusPromise,
+        retrievalPromise || Promise.resolve([]),
+        whosWhoPromise
+      ]);
+
+      const preloadedResults = retrievalResults.filter((item) => isUrlActive(item.url || '', item.parentDocumentId || item.id));
+
+      // 2. Call the Orchestrated RAG Service
+      // This now handles: FAQ check -> KQL refinement -> SP Search -> AI Grounding
+      const activeOnlySearchService = {
+        searchDocuments: async (searchQuery: string): Promise<ISearchResult[]> => {
+          const results = await searchServiceRef.current!.searchDocuments(searchQuery);
+          return results.filter((item) => isUrlActive(item.url || '', item.parentDocumentId || item.id));
+        }
+      };
+
+      const serviceResponse = await openAIServiceRef.current.getChatResponse(
+        query,
+        serviceHistory,
+        activeOnlySearchService,
+        configServiceRef.current,
+        updateStatus,
+        preloadedResults,
+        whosWhoContext
+      );
+
+      // 3. Map citations to DocumentItems for UI rendering
+      const visibleCitations = orderCitationsByAnswerMentions(serviceResponse.citations, serviceResponse.text)
+        .filter(cite => cite && cite.title && !cite.title.toLowerCase().includes("who's who"))
+        .filter(cite => isUrlActive(cite.url || '', cite.parentDocumentId || cite.id))
+        .slice(0, 5);
+
+      const visibleDocuments = buildVisibleDocuments(visibleCitations);
+
+      focusedDocumentsRef.current = visibleCitations
+        .map((cite) => ({
+          id: String(cite.parentDocumentId || cite.id || ''),
+          title: cite.title,
+          url: cite.url
+        }))
+        .filter((doc) => doc.id)
+        .slice(0, 5);
+
+      return {
+        sender: "bot",
+        text: serviceResponse.text,
+        citations: visibleCitations,
+        documents: visibleDocuments,
+        timestamp: serviceResponse.timestamp
+      };

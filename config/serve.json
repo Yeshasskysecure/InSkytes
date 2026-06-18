@@ -1,0 +1,30 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/spfx-serve.schema.json",
+  "port": 4321,
+  "https": true,
+  "serveConfigurations": {
+    "default": {
+      "pageUrl": "https://indegene123.sharepoint.com/sites/iKnowledgeNext/_layouts/15/workbench.aspx?debug=true&noredir=true&reset=true&ikBackend=prod&debugManifestsFile=https%3A%2F%2Flocalhost%3A4321%2Ftemp%2Fbuild%2Fmanifests.js"
+    },
+    "syncMetrics": {
+      "pageUrl": "https://indegene123.sharepoint.com/sites/iKnowledgeNext/KM%20Review%20Hub/Forms/AllItems.aspx",
+      "customActions": {
+        "254ffe71-3748-4555-9be1-fecc7e3f7a0a": {
+          "location": "ClientSideExtension.ListViewCommandSet.CommandBar",
+          "properties": {}
+        }
+      }
+    },
+    "loaderDelayCustomizer": {
+      "pageUrl": "https://{tenantDomain}/SitePages/myPage.aspx",
+      "customActions": {
+        "39959469-b4af-4db9-b36f-624dc4749a66": {
+          "location": "ClientSideExtension.ApplicationCustomizer",
+          "properties": {
+            "testMessage": "Test message"
+          }
+        }
+      }
+    }
+  }
+}

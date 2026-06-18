@@ -1,0 +1,22 @@
+{
+  "@microsoft/generator-sharepoint": {
+    "plusBeta": false,
+    "isCreatingSolution": true,
+    "nodeVersion": "18.20.8",
+    "sdksVersions": {
+      "@microsoft/microsoft-graph-client": "3.0.2",
+      "@microsoft/teams-js": "2.24.0"
+    },
+    "version": "1.20.0",
+    "libraryName": "loader-delay-customizer",
+    "libraryId": "9d53704b-93f3-440c-8fe9-c45917ec73b7",
+    "environment": "spo",
+    "packageManager": "npm",
+    "solutionName": "loader-delay-customizer",
+    "solutionShortDescription": "loader-delay-customizer description",
+    "skipFeatureDeployment": true,
+    "isDomainIsolated": false,
+    "componentType": "extension",
+    "extensionType": "ApplicationCustomizer"
+  }
+}

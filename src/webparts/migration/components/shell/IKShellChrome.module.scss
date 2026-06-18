@@ -1,0 +1,1086 @@
+@import '../../styles/ikDesignTokens';
+
+.topBar {
+  --ik-shell-topbar-height: 72px;
+  --ik-shell-control-size: 38px;
+  --ik-shell-menu-line-width: 17px;
+  --ik-shell-menu-line-height: 2px;
+  --ik-shell-menu-line-gap: 4.5px;
+  --ik-shell-control-radius: 10px;
+  --ik-shell-initials-size: 13.5px;
+
+  min-height: 72px;
+  height: 72px;
+  padding: 12px clamp(28px, 3.4vw, 54px);
+  background: $ik-shell-gradient;
+  border-bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: clamp(18px, 2vw, 32px);
+  color: $ik-text;
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  font-family: $ik-font-family;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow: visible;
+  position: relative;
+  z-index: 9500;
+  isolation: isolate;
+  white-space: nowrap;
+}
+
+.topBarCompact {
+  --ik-shell-topbar-height: 57.6px;
+  --ik-shell-control-size: 30.4px;
+  --ik-shell-menu-line-width: 13.6px;
+  --ik-shell-menu-line-height: 1.6px;
+  --ik-shell-menu-line-gap: 3.6px;
+  --ik-shell-control-radius: 8px;
+  --ik-shell-initials-size: 10.8px;
+
+  min-height: 57.6px;
+  height: 57.6px;
+  padding: 9.6px clamp(22.4px, 2.72vw, 43.2px);
+  gap: clamp(14.4px, 1.6vw, 25.6px);
+
+  .brand {
+    gap: 9.6px;
+  }
+
+  .logoImage,
+  .productLogoImage {
+    height: 22.4px;
+  }
+
+  .brandDivider {
+    margin: 0 5.6px;
+    font-size: 27.2px;
+    line-height: 28.8px;
+  }
+
+  .headerActions {
+    gap: clamp(12.8px, 1.44vw, 22.4px);
+  }
+
+  .nav {
+    gap: clamp(19.2px, 2vw, 38.4px) !important;
+    font-size: 11.2px !important;
+    line-height: 16px !important;
+  }
+
+  .nav button:not(.moreMenuTrigger):not(.moreMenuItem),
+  .nav span {
+    font-size: 11.2px !important;
+    line-height: 16px !important;
+    max-width: 128px !important;
+  }
+
+  .nav .moreMenuTrigger {
+    gap: 3.2px !important;
+    font-size: 11.2px !important;
+    line-height: 16px !important;
+  }
+
+  .moreMenuChevron {
+    width: 9.6px;
+    height: 9.6px;
+  }
+
+  .moreMenuDropdown {
+    top: calc(100% + 6.4px);
+    min-width: 160px;
+    padding: 6.4px;
+    border-radius: 11.2px;
+    gap: 1.6px;
+  }
+
+  .moreMenuDropdown .moreMenuItem {
+    padding: 8px 11.2px;
+    font-size: 11.2px !important;
+    border-radius: 6.4px;
+  }
+
+  .moreMenuDivider {
+    margin: 4.8px 8px;
+  }
+
+  .userIconButton,
+  .userPhoto,
+  .userInitials {
+    width: var(--ik-shell-control-size);
+    height: var(--ik-shell-control-size);
+  }
+
+  .userInitials {
+    font-size: var(--ik-shell-initials-size);
+  }
+
+  .profileDropdown {
+    top: calc(100% + 9.6px);
+    width: 233.6px;
+    padding: 14.4px;
+    border-radius: 11.2px;
+    box-shadow: 0 17.6px 41.6px rgba(15, 23, 42, 0.18);
+    gap: 9.6px;
+  }
+
+  .profileDropdown::before {
+    top: -5.6px;
+    right: 4px;
+    width: 11.2px;
+    height: 11.2px;
+  }
+
+  .profileClose {
+    top: 8px;
+    right: 8px;
+    width: 20.8px;
+    height: 20.8px;
+  }
+
+  .profileClose svg {
+    width: 11.2px;
+    height: 11.2px;
+  }
+
+  .profileIdentity {
+    gap: 9.6px;
+    padding-right: 22.4px;
+  }
+
+  .profileAvatar {
+    width: 35.2px;
+    height: 35.2px;
+  }
+
+  .profileAvatarPhoto,
+  .profileAvatarInitials {
+    width: 32px;
+    height: 32px;
+  }
+
+  .profileAvatarInitials {
+    font-size: 11.2px;
+  }
+
+  .profileName {
+    font-size: 12.8px;
+    line-height: 19.2px;
+  }
+
+  .profileEmail {
+    font-size: 11.2px;
+    line-height: 16px;
+    padding: 8px 9.6px;
+    border-radius: 6.4px;
+  }
+
+  .profileLogout {
+    margin-top: 1.6px;
+    padding: 8px 11.2px;
+    border-radius: 6.4px;
+    font-size: 10.4px;
+    line-height: 14.4px;
+  }
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: clamp(16px, 1.8vw, 28px);
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: visible;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  flex: 0 0 auto;
+  flex-shrink: 0;
+  min-width: 0;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  &:focus-visible {
+    outline: 2px solid rgba($ik-brand-purple, 0.45);
+    outline-offset: 6px;
+    border-radius: 8px;
+  }
+}
+
+.logoImage,
+.productLogoImage {
+  height: 28px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+  flex: 0 0 auto;
+}
+
+.brandDivider {
+  color: #5337D0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.brandDivider {
+  margin: 0 7px;
+  font-size: 34px;
+  font-weight: 500;
+  line-height: 36px;
+  transform: translateY(-1px);
+}
+
+.nav {
+  @include ik-body-text;
+  font-size: 14px;
+  line-height: 20px;
+  display: flex;
+  align-items: center;
+  gap: clamp(24px, 2.5vw, 48px);
+  min-width: 0;
+  flex: 1 1 auto;
+  justify-content: flex-end;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  overflow: visible;
+}
+
+.nav button:not(.moreMenuTrigger):not(.moreMenuItem),
+.nav span {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #231F20;
+  font: inherit;
+  font-weight: 400;
+  line-height: 1;
+  white-space: nowrap;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 0 1 auto;
+}
+
+.nav button {
+  cursor: pointer;
+}
+
+.nav button:not(.moreMenuTrigger):not(.moreMenuItem):hover {
+  color: $ik-brand-purple;
+}
+
+.nav button.navItemActive:not(.moreMenuTrigger):not(.moreMenuItem),
+.nav span.navItemActive {
+  color: #2563eb;
+  font-weight: 700;
+}
+
+.moreMenuWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+.nav .moreMenuTrigger {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #231F20;
+  font: inherit;
+  font-weight: 400;
+  line-height: 20px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color 0.15s ease;
+
+  &:hover {
+    color: $ik-brand-purple;
+    background: transparent;
+    border: 0;
+  }
+
+  &[aria-expanded="true"] {
+    color: $ik-brand-purple;
+    background: transparent;
+    border: 0;
+  }
+}
+
+.nav .moreMenuTriggerActive {
+  color: #2563eb;
+  font-weight: 700;
+}
+
+.moreMenuChevron {
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.moreMenuChevronOpen {
+  transform: rotate(180deg);
+  opacity: 1;
+}
+
+.moreMenuDropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: #ffffff;
+  border: 1px solid #e8edf2;
+  border-radius: 14px;
+  box-shadow:
+    0 4px 6px -2px rgba(0,0,0,0.05),
+    0 12px 40px -4px rgba(0,0,0,0.12);
+  min-width: 200px;
+  padding: 8px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  animation: moreMenuFadeIn 0.15s ease;
+}
+
+@keyframes moreMenuFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.moreMenuDropdown .moreMenuItem {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 10px 14px;
+  border: 0;
+  background: transparent;
+  color: #231F20 !important;
+  font-family: $ik-font-family !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  line-height: 1 !important;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: all 0.12s ease;
+
+  &:hover {
+    background: #f5f3ff !important;
+    color: #5b3fe0 !important;
+    padding-left: 18px;
+  }
+
+  &:active {
+    background: #ede9fe !important;
+  }
+}
+
+.moreMenuDropdown .moreMenuItemActive {
+  background: #eff6ff !important;
+  color: #2563eb !important;
+  font-weight: 700 !important;
+}
+
+.moreMenuDivider {
+  height: 1px;
+  background: linear-gradient(to right, transparent, #e2e8f0, transparent);
+  margin: 6px 10px;
+}
+
+.userIcon {
+  width: 24px;
+  height: 24px;
+  color: $ik-text;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.userIconButton svg,
+.userIcon svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.profileMenu {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.mobileNavWrapper {
+  position: relative;
+  display: none;
+  flex: 0 0 auto;
+}
+
+.mobileMenuButton {
+  width: var(--ik-shell-control-size);
+  height: var(--ik-shell-control-size);
+  padding: 0;
+  border: 1px solid rgba(83, 55, 208, 0.28);
+  border-radius: var(--ik-shell-control-radius);
+  background: #ffffff;
+  color: #5337D0;
+  cursor: pointer;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ik-shell-menu-line-gap);
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  box-shadow: 0 1px 2px rgba(83, 55, 208, 0.05);
+
+  span {
+    display: block;
+    width: var(--ik-shell-menu-line-width);
+    height: var(--ik-shell-menu-line-height);
+    border-radius: 999px;
+    background: currentColor;
+    flex: 0 0 auto;
+  }
+
+  &:hover,
+  &:focus-visible,
+  &[aria-expanded="true"] {
+    background: #faf8ff;
+    border-color: rgba(83, 55, 208, 0.42);
+    outline: none;
+  }
+}
+
+.mobileNavPanel {
+  position: fixed;
+  top: calc(var(--ik-shell-topbar-height) + 10px);
+  right: max(8px, env(safe-area-inset-right));
+  z-index: 10000;
+  width: min(280px, calc(100vw - 16px));
+  max-width: calc(100vw - 16px);
+  max-height: calc(100vh - var(--ik-shell-topbar-height) - 110px);
+  max-height: calc(100dvh - var(--ik-shell-topbar-height) - 110px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding: 8px;
+  border: 1px solid #e3e8f1;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.18);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  box-sizing: border-box;
+}
+
+.mobileNavItem {
+  width: 100%;
+  min-height: 44px;
+  min-width: 0;
+  padding: 11px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #231F20;
+  font-family: $ik-font-family;
+  font-size: 14px;
+  line-height: 18px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-sizing: border-box;
+
+  &:hover,
+  &:focus-visible {
+    background: #f5f3ff;
+    color: #5D2CC9;
+    outline: none;
+  }
+}
+
+.mobileNavItemActive {
+  background: #eff6ff;
+  color: #2563eb;
+  font-weight: 700;
+}
+
+.mobileNavDivider {
+  height: 1px;
+  margin: 6px 4px;
+  background: #e5eaf1;
+  flex: 0 0 auto;
+}
+
+.mobileNavSectionLabel {
+  min-height: 26px;
+  padding: 6px 12px 4px;
+  color: #6D6E71;
+  font-family: $ik-font-family;
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  flex: 0 0 auto;
+}
+
+.userIconButton {
+  width: var(--ik-shell-control-size);
+  height: var(--ik-shell-control-size);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: $ik-text;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  overflow: hidden;
+  line-height: 1;
+}
+
+.userIconButton:focus-visible {
+  outline: 2px solid #6b3df0;
+  outline-offset: 4px;
+  border-radius: 50%;
+}
+
+.userPhoto {
+  width: var(--ik-shell-control-size);
+  height: var(--ik-shell-control-size);
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+  border: 2px solid rgba(255,255,255,0.3);
+}
+
+.userInitials {
+  width: var(--ik-shell-control-size);
+  height: var(--ik-shell-control-size);
+  border-radius: 50%;
+  background: $ik-brand-purple;
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding-top: 1px;
+  font-size: var(--ik-shell-initials-size);
+  line-height: 1;
+  font-weight: 700;
+  font-family: $ik-font-family;
+  letter-spacing: 0;
+  flex-shrink: 0;
+  text-align: center;
+}
+
+.profileDropdown {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  z-index: 10000;
+  width: 292px;
+  padding: 18px;
+  border: 1px solid #d9deea;
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, rgba(249, 247, 255, 0.96) 0%, #ffffff 46%),
+    #ffffff;
+  box-shadow: 0 22px 52px rgba(15, 23, 42, 0.18);
+  color: $ik-text;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-sizing: border-box;
+}
+
+.profileDropdown::before {
+  content: "";
+  position: absolute;
+  top: -7px;
+  right: 5px;
+  width: 14px;
+  height: 14px;
+  background: #f9f7ff;
+  border-left: 1px solid #d9deea;
+  border-top: 1px solid #d9deea;
+  transform: rotate(45deg);
+}
+
+.profileClose {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid #e0e6f5;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.86);
+  color: #667085;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+
+.profileClose:hover,
+.profileClose:focus-visible {
+  background: #ffffff;
+  border-color: #cfd6e3;
+  color: #101828;
+}
+
+.profileClose svg {
+  width: 14px;
+  height: 14px;
+}
+
+.profileIdentity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding-right: 28px;
+}
+
+.profileAvatar {
+  width: 44px;
+  height: 44px;
+  color: #5337D0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.profileAvatar svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.profileAvatarPhoto {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+
+.profileAvatarInitials {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: $ik-brand-purple;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: $ik-font-family;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+
+.profileName {
+  @include ik-card-heading;
+  color: #101828;
+  min-width: 0;
+  word-break: break-word;
+}
+
+.profileEmail {
+  @include ik-body-text;
+  color: #6D6E71;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 10px 12px;
+  border: 1px solid #eef2f7;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.76);
+}
+
+.profileLogout {
+  @include ik-button-text;
+  margin-top: 2px;
+  width: 100%;
+  min-width: 0;
+  padding: 10px 14px;
+  border: 1px solid #d8cffb;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #FFFCFD 0%, #F9F7FF 100%);
+  color: #5337D0;
+  text-align: center;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profileLogout:hover,
+.profileLogout:focus-visible {
+  background: #efeaff;
+  border-color: #c9bbff;
+}
+
+.footer {
+  @include ik-body-text;
+  font-size: 14px;
+  line-height: 20px;
+  min-height: 72px;
+  padding: 0 $ik-content-gutter;
+  background: $ik-shell-gradient;
+  border-top: 1px solid #e7eaf4;
+  color: $ik-text;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 28px;
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  overflow: hidden;
+  text-align: right;
+
+  > span,
+  .footerButton {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+}
+
+.footerCompact {
+  height: 57.6px;
+  min-height: 57.6px;
+  padding: 0 calc(#{$ik-content-gutter} * 0.8);
+  gap: 22.4px;
+  font-size: 11.2px;
+  line-height: 16px;
+
+  > span,
+  .footerLink {
+    font-size: 11.2px;
+    line-height: 16px;
+  }
+
+  .footerButton {
+    min-height: 24px;
+    padding: 2.4px 14.4px;
+    border-radius: 2.4px;
+    font-size: 11.2px;
+    line-height: 16px;
+  }
+}
+
+.footerHome {
+  padding-right: calc(#{$ik-content-gutter} + 42px);
+}
+
+.footerButton {
+  @include ik-button-text;
+  font-size: 14px;
+  font-weight: 700;
+  min-height: 30px;
+  padding: 3px 18px;
+  border: 1px solid #5D2CC9;
+  border-radius: 3px;
+  background: #ffffff;
+  color: #5D2CC9;
+  cursor: pointer;
+}
+
+.footerButton:hover {
+  background: #F8FAFC;
+  border-color: #421F8F;
+  color: #421F8F;
+}
+
+.footerLink {
+  @include ik-body-text;
+  border: 0;
+  background: transparent;
+  color: $ik-text;
+  cursor: pointer;
+  padding: 0;
+  font-size: inherit;
+  line-height: inherit;
+  text-decoration: none;
+}
+
+.footerLink:hover {
+  color: #5D2CC9;
+}
+
+@media (max-width: 1600px) {
+  .topBar {
+    gap: 32px;
+  }
+
+  .brand {
+    gap: 12px;
+  }
+
+  .nav {
+    @include ik-body-text;
+    font-size: 14px;
+    line-height: 20px;
+    gap: 40px;
+  }
+}
+
+@media (max-width: 1360px) {
+  .topBar {
+    gap: 24px;
+  }
+
+  .brand {
+    gap: 12px;
+  }
+
+  .nav {
+    @include ik-nav-menu-item;
+    font-size: 14px;
+    line-height: 20px;
+    gap: 23px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .topBar {
+    height: 72px;
+    min-height: 72px;
+    padding: 12px 24px;
+    flex-wrap: nowrap;
+  }
+
+  .brand {
+    min-width: 0;
+    max-width: calc(100% - 104px);
+  }
+
+  .nav {
+    display: none;
+  }
+
+  .mobileNavWrapper {
+    display: inline-flex;
+  }
+
+  .headerActions {
+    flex: 0 0 auto;
+    min-width: 84px;
+    gap: 12px;
+    overflow: visible;
+  }
+
+  .topBarCompact {
+    height: 57.6px;
+    min-height: 57.6px;
+    padding: 9.6px 19.2px;
+
+    .headerActions {
+      min-width: 67.2px;
+      gap: 9.6px;
+    }
+
+    .mobileMenuButton,
+    .userIconButton,
+    .userPhoto,
+    .userInitials {
+      width: var(--ik-shell-control-size);
+      height: var(--ik-shell-control-size);
+    }
+
+    .mobileMenuButton {
+      gap: var(--ik-shell-menu-line-gap);
+      border-radius: var(--ik-shell-control-radius);
+
+      span {
+        width: var(--ik-shell-menu-line-width);
+        height: var(--ik-shell-menu-line-height);
+      }
+    }
+
+    .userInitials {
+      font-size: var(--ik-shell-initials-size);
+      line-height: 1;
+    }
+
+    .mobileNavPanel {
+      top: calc(var(--ik-shell-topbar-height) + 8px);
+      right: max(8px, env(safe-area-inset-right));
+      width: min(224px, calc(100vw - 16px));
+      max-width: calc(100vw - 16px);
+      max-height: calc(100vh - 76.8px);
+      padding: 6.4px;
+      border-radius: 9.6px;
+      box-shadow: 0 14.4px 35.2px rgba(15, 23, 42, 0.18);
+      gap: 1.6px;
+    }
+
+    .mobileNavItem {
+      padding: 8.8px 9.6px;
+      border-radius: 6.4px;
+      font-size: 11.2px;
+      line-height: 14.4px;
+    }
+
+    .mobileNavDivider {
+      margin: 4.8px 3.2px;
+    }
+
+    .mobileNavSectionLabel {
+      min-height: 22.4px;
+      padding: 4.8px 9.6px 3.2px;
+      font-size: 8.8px;
+      line-height: 11.2px;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .topBar {
+    --ik-shell-topbar-height: 57.6px;
+    --ik-shell-control-size: 38px;
+    --ik-shell-menu-line-width: 17px;
+    --ik-shell-menu-line-height: 2px;
+    --ik-shell-menu-line-gap: 4.5px;
+    --ik-shell-control-radius: 10px;
+    --ik-shell-initials-size: 13.5px;
+
+    height: 57.6px;
+    min-height: 57.6px;
+    padding: 9.6px 14px;
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 9.6px;
+  }
+
+  .brand {
+    gap: 9.6px;
+    min-width: 0;
+    max-width: calc(100% - 92px);
+  }
+
+  .logoImage,
+  .productLogoImage {
+    height: 22.4px;
+  }
+
+  .brandDivider {
+    margin: 0 5.6px;
+    font-size: 27.2px;
+    line-height: 28.8px;
+  }
+
+  .headerActions {
+    min-width: 76px;
+    gap: 9.6px;
+  }
+
+  .userIconButton,
+  .userPhoto,
+  .userInitials,
+  .mobileMenuButton {
+    width: var(--ik-shell-control-size);
+    height: var(--ik-shell-control-size);
+  }
+
+  .mobileNavPanel {
+    right: max(8px, env(safe-area-inset-right));
+    width: min(280px, calc(100vw - 16px));
+    max-width: calc(100vw - 16px);
+  }
+
+  .footer {
+    min-height: 42px;
+    padding: 0 16px;
+    justify-content: flex-end;
+    gap: 18px;
+    flex-wrap: nowrap;
+  }
+
+  .footerCompact {
+    height: 57.6px;
+    min-height: 57.6px;
+    padding: 0 calc(#{$ik-content-gutter} * 0.8);
+    gap: 22.4px;
+    font-size: 11.2px;
+    line-height: 16px;
+  }
+
+  .footerButton {
+    @include ik-button-text;
+    height: 22.4px;
+    padding: 0 14.4px;
+    border-width: 1px;
+  }
+}
+
+@media (max-width: 480px) {
+  .brand {
+    min-width: 0;
+    max-width: calc(100% - 84px);
+  }
+
+  .mobileNavPanel {
+    right: max(8px, env(safe-area-inset-right));
+  }
+}

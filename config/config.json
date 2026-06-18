@@ -1,0 +1,44 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/config.2.0.schema.json",
+  "version": "2.0",
+  "bundles": {
+    "loader-delay-customizer-application-customizer": {
+      "components": [
+        {
+          "entrypoint": "./lib/extensions/loaderDelayCustomizer/LoaderDelayCustomizerApplicationCustomizer.js",
+          "manifest": "./src/extensions/loaderDelayCustomizer/LoaderDelayCustomizerApplicationCustomizer.manifest.json"
+        }
+      ]
+    },
+    "sync-metrics-command-set": {
+      "components": [
+        {
+          "entrypoint": "./lib/extensions/syncMetrics/SyncMetricsCommandSet.js",
+          "manifest": "./src/extensions/syncMetrics/SyncMetricsCommandSet.manifest.json"
+        }
+      ]
+    },
+    "migration-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/migration/MigrationWebPart.js",
+          "manifest": "./src/webparts/migration/MigrationWebPart.manifest.json"
+        }
+      ]
+    }
+  },
+  "externals": {
+    "react": {
+      "path": "node_modules/react/umd/react.production.min.js",
+      "globalName": "React"
+    },
+    "react-dom": {
+      "path": "node_modules/react-dom/umd/react-dom.production.min.js",
+      "globalName": "ReactDOM"
+    }
+  },
+  "localizedResources": {
+    "LoaderDelayCustomizerApplicationCustomizerStrings": "lib/extensions/loaderDelayCustomizer/loc/{locale}.js",
+    "MigrationWebPartStrings": "lib/webparts/migration/loc/{locale}.js"
+  }
+}

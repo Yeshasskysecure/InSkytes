@@ -1,0 +1,115 @@
+export interface KnowledgeDocumentIndexRecord {
+  id: string;
+  siteId: string;
+  driveId: string;
+  listId: string;
+  listItemId: string;
+  driveItemId?: string;
+  fileUniqueId?: string;
+  uniqueId?: string;
+  fileRef?: string;
+  serverRelativeUrl?: string;
+  fileName: string;
+  title: string;
+  webUrl: string;
+  fileExtension: string;
+  mimeType?: string;
+  status: string;
+  bu?: string;
+  buFilterValues?: string[];
+  department?: string;
+  departmentFilterValues?: string[];
+  departmentFacetValues?: string[];
+  diseaseArea?: string;
+  diseaseAreaFilterValues?: string[];
+  therapyArea?: string;
+  therapyAreaFilterValues?: string[];
+  client?: string;
+  clientFilterValues?: string[];
+  region?: string;
+  regionFilterValues?: string[];
+  documentType?: string;
+  documentTypeFilterValues?: string[];
+  authors: string[];
+  modifiedBy?: string;
+  createdDateTime?: string;
+  created?: string;
+  lastModifiedDateTime?: string;
+  modified?: string;
+  publishedDate?: string;
+  contentRefreshDate?: string;
+  description?: string;
+  contentPreview?: string;
+  projectId?: string;
+  sensitiveTerms?: string;
+  version?: string;
+  indexedAt: string;
+}
+
+export type ChunkSourceKind =
+  | 'document'
+  | 'slide'
+  | 'sheet'
+  | 'image_ocr'
+  | 'transcript';
+
+export interface KnowledgeChunkIndexRecord {
+  id: string;
+  documentId: string;
+  siteId: string;
+  driveId: string;
+  listId: string;
+  listItemId: string;
+  title: string;
+  fileName: string;
+  webUrl: string;
+  status: string;
+  bu?: string;
+  buFilterValues?: string[];
+  department?: string;
+  departmentFilterValues?: string[];
+  departmentFacetValues?: string[];
+  diseaseArea?: string;
+  diseaseAreaFilterValues?: string[];
+  therapyArea?: string;
+  therapyAreaFilterValues?: string[];
+  client?: string;
+  clientFilterValues?: string[];
+  region?: string;
+  regionFilterValues?: string[];
+  documentType?: string;
+  documentTypeFilterValues?: string[];
+  authors: string[];
+  description?: string;
+  chunkOrdinal: number;
+  chunkText: string;
+  chunkVector: number[];
+  pageNumber?: number;
+  sectionTitle?: string;
+  sourceKind: ChunkSourceKind;
+  lastModifiedDateTime?: string;
+  indexedAt: string;
+}
+
+export interface PeopleIndexRecord {
+  id: string;
+  personName: string;
+  email?: string;
+  contacts?: string;
+  allEmails?: string;
+  allText?: string;
+  description?: string;
+  sectionTitles?: string;
+  serviceLine?: string;
+  contentIds?: string;
+  role?: string;
+  team?: string;
+  bu?: string;
+  region?: string;
+  manager?: string;
+  skills: string[];
+  active: boolean;
+  listItemUrl?: string;
+  lastModifiedDateTime?: string;
+  indexedAt: string;
+}

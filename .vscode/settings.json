@@ -1,0 +1,28 @@
+// Place your settings in this file to overwrite default and user settings.
+{
+  // Configure glob patterns for excluding files and folders in the file explorer.
+  "files.exclude": {
+    "**/.git": true,
+    "**/.DS_Store": true,
+    "**/bower_components": true,
+    "**/coverage": true,
+    "**/dist": true,
+    "**/jest-output": true,
+    "**/lib": true,
+    "**/lib-amd": true,
+    "**/release": true,
+    "**/temp": true,
+    "src/**/*.scss.ts": true
+  },
+  "typescript.tsdk": ".\\node_modules\\typescript\\lib",
+  "typescript.tsserver.excludeDirectories": [
+    "node_modules",
+    "lib",
+    "lib-amd",
+    "dist",
+    "release",
+    "temp"
+  ],
+  "eslint.enable": false,
+  "javascript.validate.enable": false
+}

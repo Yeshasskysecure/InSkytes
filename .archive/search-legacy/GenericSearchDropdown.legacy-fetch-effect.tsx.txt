@@ -1,0 +1,681 @@
+  React.useEffect(() => {
+    if (!shouldLoadDocuments) {
+      return;
+    }
+
+    let isCancelled = false;
+
+    const fetchDocuments = async () => {
+      try {
+        // 🚩 UAT FIX: Period ('.') = show all documents.
+        const rawText = committedSearchText || '';
+        const isPeriod = rawText === '.';
+        const shouldShowAllActiveDocuments = isPeriod || rawText === '*';
+        const safeQuery = isPeriod ? '*' : (rawText ? rawText.replace(/'/g, "''") : '*');
+        const isLatestDocsOnly = !rawText || isPeriod;
+
+        if (previousCommittedSearchTextRef.current !== rawText && currentStartRow !== 0) {
+          previousCommittedSearchTextRef.current = rawText;
+          setCurrentStartRow(0);
+          return;
+        }
+        previousCommittedSearchTextRef.current = rawText;
+
+        if (currentStartRow === 0) {
+          setThumbnailAttemptByDocument({});
+          setThumbnailLoadedByDocument({});
+          setDocuments([]);
+          setSmartAnswer(null);
+        }
+        setUsesKnowledgeSearchApiResults(false);
+        setIsDocumentsLoading(true);
+        setError(null);
+        setHasMoreResults(false);
+        setIsAIThinking(false);
+
+        if (knowledgeSearchApiClient.isConfigured()) {
+          const backendQuery = shouldShowAllActiveDocuments ? "*" : rawText.trim();
+          const backendRequest = {
+            query: backendQuery || "*",
+            top: SEARCH_PAGE_SIZE,
+            filters: knowledgeSearchFilters,
+          };
+          const backendResults = hasSearch
+            ? await knowledgeSearchApiClient.semanticSearch(backendRequest)
+            : await knowledgeSearchApiClient.searchDocuments(backendRequest);
+
+          if (isCancelled) return;
+
+          const backendDocs = backendResults
+            .map((item, index) => mapKnowledgeSearchResultToItem(item, index))
+            .filter((item): item is ResultItem => Boolean(item));
+
+          setUsesKnowledgeSearchApiResults(true);
+          setHasMoreResults(false);
+          setDocuments(backendDocs);
+          setSuggestionDocuments(backendDocs);
+
+          if (backendDocs.length > 0) {
+            fetchDocumentStats(backendDocs.map((item) => item.id)).then(stats => {
+              setDocuments(prev => prev.map(item => ({
+                ...item,
+                ...(stats[item.id] || {}),
+              })));
+            }).catch(err => console.warn("Stats fetch failed quietly:", err));
+          }
+
+          return;
+        }
+
+        throw new Error("Knowledge Search API is not configured. Main search now requires the Azure AI Search backend and will not fall back to SharePoint/browser document parsing.");
+
+        const [fieldMap, libraryMeta] = await Promise.all([
+          getSearchFieldMap(),
+          getLibraryMeta(),
+        ]);
+        if (isCancelled) return;
+        const { listId } = libraryMeta;
+
+        const selectFields = [
+          "Id", "Title", "Description", "Created", "AuthorId", "FileLeafRef", "FileRef",
+          "Author/Title", "Author/Name"
+        ];
+
+        const dynamicFields = [
+          fieldMap.status, fieldMap.businessUnit, fieldMap.department,
+          fieldMap.documentType, fieldMap.client, fieldMap.region,
+          fieldMap.therapyArea, fieldMap.diseaseArea
+        ];
+        dynamicFields.forEach(f => { if (f && !selectFields.includes(f)) selectFields.push(f); });
+
+        const expandFields = ["Author"];
+        const potentialAuthorFields = ["Author0", "DocAuthor"];
+        potentialAuthorFields.forEach(fName => {
+          const field = (fieldMap.allFields || []).find(f => f.InternalName === fName);
+          if (field) {
+            if (field.FieldTypeKind === 20 || field.FieldTypeKind === 11) {
+              selectFields.push(`${fName}/Title`);
+              expandFields.push(fName);
+            } else {
+              selectFields.push(fName);
+            }
+          }
+        });
+
+        if (fieldMap.author && !expandFields.includes(fieldMap.author)) {
+          if (fieldMap.isPersonField) {
+            selectFields.push(`${fieldMap.author}/Title`);
+            expandFields.push(fieldMap.author);
+          } else {
+            selectFields.push(fieldMap.author);
+          }
+        }
+
+        const mapListItemToResultItem = (item: any, currentRankMap: Record<number, number>): ResultItem => {
+          const fileLeafRef = item.FileLeafRef || "";
+          const fileName = fileLeafRef.split("/").pop() || fileLeafRef || "Untitled";
+          const fileType = getFileTypeFromName(fileName);
+          const candidateTitle = [getDynamicFieldValue(item, fieldMap.titleName, ["TitleName"]), item.Title]
+            .map((value: unknown) => String(value || "").trim())
+            .find((value) => value && value !== "-");
+          const publishedValue = resolveDocumentPublishedValue(item, fieldMap.published);
+          const businessUnit = getDynamicFieldValue(item, fieldMap.businessUnit, [
+            "BU", "BusinessUnit"
+          ]);
+          const department = getDynamicFieldValue(item, fieldMap.department, [
+            "Department_x0020__x002f__x0020_Sub_x0020_Department", "Department"
+          ]);
+          const documentType = getDynamicFieldValue(item, fieldMap.documentType, ["DocumentType", "Document_x0020_Type"]);
+          const client = getDynamicFieldValue(item, fieldMap.client, ["Client"]);
+          const region = getDynamicFieldValue(item, fieldMap.region, ["Region", "Geography"]);
+          const therapyArea = getDynamicFieldValue(item, fieldMap.therapyArea, ["TherapyArea", "Therapy_x0020_Area"]);
+          const diseaseArea = getDynamicFieldValue(item, fieldMap.diseaseArea, ["DiseaseArea", "Disease_x0020_Area"]);
+          const status = getDynamicFieldValue(item, fieldMap.status, ["Status"]);
+
+          return {
+            id: item.Id,
+            title: candidateTitle || fileName.split(".").slice(0, -1).join(".") || "Untitled Document",
+            fileName,
+            contributor: resolveDocumentAuthor(item, "Author N/A", fieldMap.author),
+            updated: formatDocumentPublishedDate(publishedValue, "en-US", { month: "short", day: "numeric", year: "numeric" }) || formatRelativeDate(item.Created),
+            updatedDateValue: String(publishedValue || item.Created || ""),
+            description: item.Description || "No description available",
+            fileUrl: item.FileRef ? `${window.location.origin}${item.FileRef}` : undefined,
+            fileType,
+            serverRelativeUrl: item.FileRef || "",
+            businessUnit: businessUnit ? String(businessUnit).trim() : undefined,
+            department: department ? String(department).trim() : undefined,
+            documentType: documentType ? String(documentType).trim() : undefined,
+            client: client ? String(client).trim() : undefined,
+            region: region ? String(region).trim() : undefined,
+            therapyArea: therapyArea ? String(therapyArea).trim() : undefined,
+            diseaseArea: diseaseArea ? String(diseaseArea).trim() : undefined,
+            status: status ? String(status).trim() : undefined,
+            viewCount: 0,
+            likeCount: 0,
+            commentCount: 0,
+            shareCount: 0,
+            rank: currentRankMap[item.Id] || 0,
+            matchedByNativeSearch: nativeSearchMatchedIds.has(item.Id),
+            matchedByInstantList: instantListMatchedIds.has(item.Id),
+          };
+        };
+
+        // 2. Perform Native SharePoint full-text search
+        // 🚩 UAT FIX: Reverting Auto-Quoting for better Multi-Keyword (Boolean) Discovery.
+        // Also implementing a "Boolean Normalizer" to support case-insensitive 'and', 'or', 'not'.
+        // 🚩 UAT FIX: KQL-Safe Query Builder
+        // Strip or escape characters that SharePoint KQL treats as special operators.
+        // Characters like ':', ';', '&', '-' can break the query parser on long sentences.
+        const kqlClean = (q: string): string => {
+          return q
+            .replace(/[\u201C\u201D]/g, '"')           // Normalize curly double quotes
+            .replace(/[\u2018\u2019]/g, "'")           // Normalize curly apostrophes
+            .replace(/[;:&!#{}[\]]/g, ' ')             // Strip KQL-reserved hard chars but preserve quotes
+            .replace(/(?<![A-Za-z])-(?![A-Za-z])/g, ' ') // Remove standalone hyphens (not mid-word)
+            .replace(/\s+/g, ' ')
+            .trim();
+        };
+
+        // Build the base free-text query first. We only apply explicit boolean handling later,
+        // so phrases like "finance and legal" are not accidentally broken apart.
+        const normalizedQuery = safeQuery === '*' ? '*' : kqlClean(safeQuery);
+        const conversationalCoreQuery =
+          normalizedQuery === "*" ? "*" : buildConversationalSearchCore(normalizedQuery);
+        const preferredSearchQuery =
+          normalizedQuery !== "*" && conversationalCoreQuery
+            ? conversationalCoreQuery
+            : normalizedQuery;
+        const fallbackSearchQueries =
+          preferredSearchQuery !== normalizedQuery ? [normalizedQuery] : [];
+        const effectiveFastResultsOnly = fastResultsOnly && !hasSearch;
+        const isConversational =
+          !isPeriod &&
+          (
+            preferredSearchQuery !== normalizedQuery ||
+            normalizedQuery.split(/\s+/).length >= 3 ||
+            /^(do|how|what|is|are|find|search|can|who|where)/i.test(normalizedQuery)
+          );
+        const hasExplicitOperators =
+          preferredSearchQuery !== "*" && hasExplicitSearchSyntax(preferredSearchQuery);
+        const strictQuotedSingleTermLiteral = getStrictQuotedSingleTermLiteral(preferredSearchQuery);
+        let aiKeywordQuery = "";
+
+        let rankMap: Record<number, number> = {};
+        const nativeSearchMatchedIds = new Set<number>();
+        const instantListMatchedIds = new Set<number>();
+        let allDocs: ResultItem[] = [];
+
+        const appendFetchedDocuments = (nextItems: ResultItem[]): void => {
+          if (nextItems.length === 0) {
+            return;
+          }
+
+          allDocs = mergeResultItems(allDocs, nextItems);
+          setSuggestionDocuments((prev) => mergeResultItems(prev, nextItems));
+
+          if (isCancelled) {
+            return;
+          }
+
+          setDocuments((prev) => mergeResultItems(prev, nextItems));
+        };
+
+        const loadAllActiveDocuments = async (appendResults = false): Promise<ResultItem[]> => {
+          let collectedDocs: ResultItem[] = [];
+          let requestUrl =
+            `${siteUrl}/_api/web/lists/getbytitle('${LIBRARY_NAME}')/items` +
+            `?$select=${encodeURIComponent(Array.from(new Set(selectFields)).join(','))}` +
+            `&$expand=${encodeURIComponent(Array.from(new Set(expandFields)).join(','))}` +
+            `&$orderby=Created desc` +
+            `&$top=5000`;
+
+          while (requestUrl) {
+            const response = await spHttpClient.get(requestUrl, SPHttpClient.configurations.v1);
+            if (!response.ok) {
+              const errorText = await response.text();
+              throw new Error(`Failed to fetch all documents: ${response.status} ${errorText}`);
+            }
+
+            const data = await response.json();
+            const pageItems = data?.value || data?.d?.results || [];
+            const pageDocs = pageItems
+              .map((item: any) => mapListItemToResultItem(item, rankMap))
+              .filter((item: ResultItem) => !item.status || item.status.trim().toLowerCase() === "active");
+
+            collectedDocs = mergeResultItems(collectedDocs, pageDocs);
+            if (appendResults) {
+              appendFetchedDocuments(pageDocs);
+            }
+            requestUrl = data?.["@odata.nextLink"] || data?.d?.__next || "";
+          }
+
+          return collectedDocs;
+        };
+
+        const fetchAllActiveDocuments = async (): Promise<void> => {
+          setHasMoreResults(false);
+
+          const finalDocs = await loadAllActiveDocuments(true);
+          fetchDocumentStats(finalDocs.map((item) => item.id)).then(stats => {
+            setDocuments(prev => prev.map(item => ({
+              ...item,
+              ...(stats[item.id] || {}),
+            })));
+          }).catch(err => console.warn("Stats fetch failed quietly:", err));
+        };
+
+        const loadDocumentContentForSearch = async (item: ResultItem): Promise<string> => {
+          const existingContent = getCachedDocumentContent(item);
+          if (existingContent) {
+            return existingContent;
+          }
+
+          if (
+            !item.serverRelativeUrl ||
+            !item.fileType ||
+            !SUPPORTED_CONTENT_TYPES.has(item.fileType.toUpperCase())
+          ) {
+            return "";
+          }
+
+          try {
+            const response = await spHttpClient.get(
+              `${siteUrl}/_api/web/GetFileByServerRelativeUrl('${escapeODataValue(item.serverRelativeUrl)}')/$value`,
+              SPHttpClient.configurations.v1
+            );
+
+            if (!response.ok) {
+              return "";
+            }
+
+            const blob = await response.blob();
+            const file = new File([blob], item.fileName, { type: blob.type });
+            const parseResult = await DocumentParser.parseFile(file);
+            if (parseResult.success && parseResult.text) {
+              setCachedDocumentContent(item, parseResult.text);
+              return parseResult.text;
+            }
+          } catch (contentError) {
+            console.warn(`Unable to extract fallback search content for item ${item.id}:`, contentError);
+          }
+
+          return "";
+        };
+
+        const performLocalContentFallback = async (query: string): Promise<ResultItem[]> => {
+          const fallbackQuery = normalizeSearchWhitespace(query);
+          if (!fallbackQuery || fallbackQuery === "." || fallbackQuery === "*") {
+            return [];
+          }
+
+          const allActiveDocs = await loadAllActiveDocuments(false);
+          const matchedDocs = new Map<number, ResultItem>();
+
+          allActiveDocs.forEach((item) => {
+            if (doesResultMatchSearchIntent(item, fallbackQuery)) {
+              matchedDocs.set(item.id, item);
+            }
+          });
+
+          const contentCandidates = allActiveDocs.filter(
+            (item) =>
+              item.serverRelativeUrl &&
+              item.fileType &&
+              SUPPORTED_CONTENT_TYPES.has(item.fileType.toUpperCase())
+          );
+
+          const LOCAL_FALLBACK_BATCH_SIZE = PAGE_SIZES.localFallbackBatch;
+          for (
+            let batchStart = 0;
+            batchStart < contentCandidates.length && !isCancelled;
+            batchStart += LOCAL_FALLBACK_BATCH_SIZE
+          ) {
+            const batch = contentCandidates.slice(batchStart, batchStart + LOCAL_FALLBACK_BATCH_SIZE);
+            const batchMatches = await Promise.all(
+              batch.map(async (item) => {
+                const content = await loadDocumentContentForSearch(item);
+                return doesResultMatchSearchIntent(item, fallbackQuery, content) ? item : null;
+              })
+            );
+
+            batchMatches.forEach((item) => {
+              if (item) {
+                matchedDocs.set(item.id, item);
+              }
+            });
+          }
+
+          return Array.from(matchedDocs.values()).sort((left, right) => {
+            const rightKeywordMatches = countKeywordMatches(
+              right,
+              fallbackQuery,
+              getCachedDocumentContent(right)
+            );
+            const leftKeywordMatches = countKeywordMatches(
+              left,
+              fallbackQuery,
+              getCachedDocumentContent(left)
+            );
+
+            if (leftKeywordMatches !== rightKeywordMatches) {
+              return rightKeywordMatches - leftKeywordMatches;
+            }
+
+            const exactPriorityDelta =
+              getExactMatchPriority(left, fallbackQuery) - getExactMatchPriority(right, fallbackQuery);
+            if (exactPriorityDelta !== 0) {
+              return exactPriorityDelta;
+            }
+
+            const rightScore = scoreResult(
+              right,
+              fallbackQuery,
+              getCachedDocumentContent(right)
+            );
+            const leftScore = scoreResult(
+              left,
+              fallbackQuery,
+              getCachedDocumentContent(left)
+            );
+
+            if (leftScore !== rightScore) {
+              return rightScore - leftScore;
+            }
+
+            return (right.rank || 0) - (left.rank || 0);
+          });
+        };
+
+        if (normalizedQuery === "*" && shouldShowAllActiveDocuments) {
+          await fetchAllActiveDocuments();
+          return;
+        }
+
+        // 🚩 DUAL-DISCOVERY SEARCH: Merging Instant (List API) and Deep (Search API) results.
+        const scopeFilter = `ListId:${listId}`;
+        const sortParam = isLatestDocsOnly ? 'Write:descending' : 'Rank:descending';
+
+        let searchRows: any[] = [];
+        let listRows: any[] = [];
+
+        const runSharePointSearch = async (searchQuery: string): Promise<{ rows: any[]; totalRows: number }> => {
+          const scopedQuery =
+            searchQuery === "*"
+              ? scopeFilter
+              : `(${searchQuery}) AND ${scopeFilter}`;
+          const searchApiUrl = `${siteUrl}/_api/search/query?querytext='${encodeURIComponent(scopedQuery)}'&selectproperties='ListItemID,Rank'&rowlimit=${SEARCH_PAGE_SIZE}&startrow=${currentStartRow}&clienttype='ContentSearchRegular'&sortlist='${sortParam}'&enablequeryrules=true&enableclipping=true`;
+          const searchRes = await spHttpClient.get(searchApiUrl, SPHttpClient.configurations.v1);
+          if (!searchRes.ok) {
+            return { rows: [], totalRows: 0 };
+          }
+
+          const searchJson = await searchRes.json();
+          return {
+            rows: searchJson.PrimaryQueryResult?.RelevantResults?.Table?.Rows || [],
+            totalRows: searchJson.PrimaryQueryResult?.RelevantResults?.TotalRows || 0,
+          };
+        };
+
+        const runFirstMatchingSharePointSearch = async (
+          searchQueryCandidates: string[]
+        ): Promise<{ query: string; rows: any[]; totalRows: number } | null> => {
+          const searchResults = await Promise.all(
+            searchQueryCandidates.map(async (searchQueryCandidate) => ({
+              query: searchQueryCandidate,
+              ...(await runSharePointSearch(searchQueryCandidate).catch((searchError) => {
+                console.warn(`SharePoint search candidate failed: ${searchQueryCandidate}`, searchError);
+                return { rows: [], totalRows: 0 };
+              }))
+            }))
+          );
+
+          return searchResults.find((searchResult) => searchResult.rows.length > 0) || null;
+        };
+
+        const instantListRowsPromise: Promise<any[]> = (async () => {
+          if (normalizedQuery === '*' || currentStartRow !== 0 || hasExplicitSearchSyntax(preferredSearchQuery)) {
+            return [];
+          }
+
+          const listSearchLiterals = buildListSearchLiterals(preferredSearchQuery, fallbackSearchQueries);
+          if (listSearchLiterals.length === 0) {
+            return [];
+          }
+
+          const listSearchFields = Array.from(new Set([
+            "Title",
+            "FileLeafRef",
+            fieldMap.titleName
+          ].filter(Boolean)));
+          const listFilter = listSearchLiterals
+            .map((literal) => {
+              const escapedLiteral = literal.replace(/'/g, "''");
+              return listSearchFields
+                .map((fieldName) => `substringof('${escapedLiteral}', ${fieldName})`)
+                .join(" or ");
+            })
+            .map((condition) => `(${condition})`)
+            .join(' or ');
+          const listApiUrl = `${siteUrl}/_api/web/lists/getbyid('${listId}')/items?$select=Id&$filter=${encodeURIComponent(listFilter)}&$top=50`;
+          const listInstantRes = await spHttpClient.get(listApiUrl, SPHttpClient.configurations.v1);
+          if (listInstantRes.ok) {
+            const listJson = await listInstantRes.json();
+            return listJson.value || [];
+          }
+
+          return [];
+        })();
+
+        if (!effectiveFastResultsOnly) {
+          // Pass A: Deep Search (Inside PPTX/PDF) - Has 5-15 min delay.
+          // We try a small sequence of query candidates so long phrases and OR-based queries still resolve.
+          let searchQueryCandidates = buildSearchQueryCandidates(
+            preferredSearchQuery,
+            "",
+            fallbackSearchQueries
+          );
+
+          const searchResult = await runFirstMatchingSharePointSearch(searchQueryCandidates);
+          if (searchResult) {
+            searchRows = searchResult.rows;
+            setHasMoreResults(currentStartRow + searchRows.length < searchResult.totalRows);
+            console.log(`🔎 SharePoint search matched using query candidate: ${searchResult.query}`);
+          }
+
+          if (
+            searchRows.length === 0 &&
+            isConversational &&
+            currentStartRow === 0 &&
+            !hasExplicitOperators
+          ) {
+            try {
+              const openai = new AzureOpenAIService();
+              const aiKeywords = await openai.getRefinedKeywords(normalizedQuery);
+              if (aiKeywords) {
+                aiKeywordQuery = kqlClean(aiKeywords);
+                console.log(`🤖 AI Refined Query: "${normalizedQuery}" -> "${aiKeywordQuery}"`);
+
+                searchQueryCandidates = buildSearchQueryCandidates(
+                  preferredSearchQuery,
+                  aiKeywordQuery,
+                  fallbackSearchQueries
+                );
+
+                const searchResult = await runFirstMatchingSharePointSearch(searchQueryCandidates);
+                if (searchResult) {
+                  searchRows = searchResult.rows;
+                  setHasMoreResults(currentStartRow + searchRows.length < searchResult.totalRows);
+                  console.log(`🔎 SharePoint search matched using AI query candidate: ${searchResult.query}`);
+                }
+              }
+            } catch (aiError) {
+              console.warn("AI refinement failed, continuing with original query:", aiError);
+            }
+          }
+        }
+
+        // Pass B: Instant Discovery (Metadata only) - Zero Delay
+        // We search Title and Category fields via direct List API to catch newly uploaded files.
+        if (normalizedQuery !== '*' && currentStartRow === 0 && !hasExplicitSearchSyntax(preferredSearchQuery)) {
+          listRows = await instantListRowsPromise;
+        }
+
+        // Merge and De-duplicate IDs
+        const matchedIds: number[] = [];
+        const idSet = new Set<number>();
+
+        // Priority 1: List API (Instant) - Give them a base rank
+        listRows.forEach((item: any) => {
+          const id = parseInt(item.Id, 10);
+          if (!idSet.has(id)) {
+            idSet.add(id);
+            matchedIds.push(id);
+            rankMap[id] = INSTANT_LIST_MATCH_BOOST; // Keep new metadata-only matches visible without outranking stronger content hits
+          }
+          instantListMatchedIds.add(id);
+        });
+
+        // Priority 2: Search API (Deep)
+        searchRows.forEach((row: any) => {
+          const cells = row.Cells || [];
+          const idCell = cells.find((c: any) => c.Key === 'ListItemID');
+          const rankCell = cells.find((c: any) => c.Key === 'Rank');
+          if (idCell?.Value) {
+            const id = parseInt(idCell.Value, 10);
+            if (!idSet.has(id)) {
+              idSet.add(id);
+              matchedIds.push(id);
+            }
+            // Keep the search rank or boost it if it was already found in List API
+            const searchRank = parseFloat(rankCell?.Value || "0");
+            rankMap[id] = (rankMap[id] || 0) + searchRank;
+            nativeSearchMatchedIds.add(id);
+          }
+        });
+
+        console.log(`🔍 [DUAL-SEARCH] Found ${listRows.length} instant and ${searchRows.length} deep results. Merged: ${matchedIds.length}`);
+
+        if (matchedIds.length === 0) {
+          if (!effectiveFastResultsOnly) {
+            const localFallbackDocs = await performLocalContentFallback(preferredSearchQuery || rawText);
+            if (localFallbackDocs.length > 0) {
+              appendFetchedDocuments(localFallbackDocs);
+              setContentRevision((current) => current + 1);
+              const fallbackDocs = [...localFallbackDocs];
+              fetchDocumentStats(fallbackDocs.map((item) => item.id)).then(stats => {
+                setDocuments(prev => prev.map(item => ({
+                  ...item,
+                  ...(stats[item.id] || {}),
+                })));
+              }).catch(err => console.warn("Stats fetch failed quietly:", err));
+              return;
+            }
+          }
+
+          console.warn("⚠️ [DEBUG] No matched IDs found in SharePoint Search for query:", safeQuery);
+          setDocuments([]);
+          return;
+        }
+
+        if (!effectiveFastResultsOnly && currentStartRow === 0) {
+          const localContentDocs = await performLocalContentFallback(preferredSearchQuery || rawText);
+          if (localContentDocs.length > 0) {
+            appendFetchedDocuments(localContentDocs);
+            setContentRevision((current) => current + 1);
+          }
+        }
+        console.log(`📂 [DEBUG] Attempting to fetch metadata for ${matchedIds.length} IDs.`);
+
+        // 3. Batch fetch the List Items metadata using the matched IDs
+        const encodedSelectFields = encodeURIComponent(Array.from(new Set(selectFields)).join(','));
+        const encodedExpandFields = encodeURIComponent(Array.from(new Set(expandFields)).join(','));
+        const fetchMetadataChunk = async (chunk: number[]): Promise<ResultItem[]> => {
+          const filterStr = chunk.map(id => `Id eq ${id}`).join(' or ');
+          let currentSelect = encodedSelectFields;
+          let currentExpand = encodedExpandFields;
+          let retryCount = 0;
+
+          while (retryCount < 2) {
+            let apiUrl =
+              `${siteUrl}/_api/web/lists/getbytitle('${LIBRARY_NAME}')/items` +
+              `?$select=${currentSelect}` +
+              `&$filter=${encodeURIComponent(filterStr)}`;
+
+            if (currentExpand) {
+              apiUrl += `&$expand=${currentExpand}`;
+            }
+
+            const response = await spHttpClient.get(apiUrl, SPHttpClient.configurations.v1);
+
+            if (response.ok) {
+              const data = await response.json();
+              return (data.value || [])
+                .map((item: any) => mapListItemToResultItem(item, rankMap))
+                .filter((item: ResultItem) => !item.status || item.status.trim().toLowerCase() === "active");
+            }
+
+            const errorText = await response.text();
+            console.error(`⚠️ SharePoint OData error (${response.status}):`, errorText);
+
+            if (response.status === 400 && retryCount === 0) {
+              console.warn("Retrying metadata fetch with minimalist field set due to OData 400 error...");
+              currentSelect = encodeURIComponent("Id,Title,Description,Created,FileLeafRef,FileRef");
+              currentExpand = "";
+              retryCount++;
+              continue;
+            }
+
+            break;
+          }
+
+          return [];
+        };
+
+        const chunkSize = 40;
+        const metadataChunks: number[][] = [];
+        for (let i = 0; i < matchedIds.length; i += chunkSize) {
+          metadataChunks.push(matchedIds.slice(i, i + chunkSize));
+        }
+
+        const metadataResults = await Promise.all(metadataChunks.map((chunk) => fetchMetadataChunk(chunk)));
+        metadataResults.forEach((chunkDocs) => appendFetchedDocuments(chunkDocs));
+
+        const missingMatchedIds = matchedIds.filter((id) => !allDocs.some((item) => item.id === id));
+        if (missingMatchedIds.length > 0 && currentStartRow === 0) {
+          const missingIdSet = new Set(missingMatchedIds);
+          const recoveredDocs = (await loadAllActiveDocuments(false)).filter((item) => missingIdSet.has(item.id));
+          appendFetchedDocuments(recoveredDocs);
+        }
+
+        if (strictQuotedSingleTermLiteral && currentStartRow === 0) {
+          const strictExactDocs = (await loadAllActiveDocuments(false)).filter((item) =>
+            matchesStrictQuotedSingleTerm(item, strictQuotedSingleTermLiteral)
+          );
+          appendFetchedDocuments(strictExactDocs);
+          setHasMoreResults(false);
+        }
+
+        // Final pass for stats (can be done in background)
+        const finalDocs = [...allDocs];
+        fetchDocumentStats(finalDocs.map((item) => item.id)).then(stats => {
+          setDocuments(prev => prev.map(item => ({
+            ...item,
+            ...(stats[item.id] || {}),
+          })));
+        }).catch(err => console.warn("Stats fetch failed quietly:", err));
+
+      } catch (fetchError: any) {
+        console.error("Error fetching search documents:", fetchError);
+        setError(fetchError.message || "Failed to load search documents");
+      } finally {
+        setIsDocumentsLoading(false);
+      }
+    };
+
+    void fetchDocuments();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [committedSearchText, fastResultsOnly, fetchDocumentStats, getCachedDocumentContent, getSearchFieldMap, hasSearch, knowledgeSearchApiClient, knowledgeSearchFilters, setCachedDocumentContent, shouldLoadDocuments, siteUrl, spHttpClient, currentStartRow, documentsRefreshKey, refreshKey]);

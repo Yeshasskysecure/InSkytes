@@ -1,0 +1,90 @@
+@import '../styles/ikDesignTokens';
+@mixin detail-header-shell {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+@mixin detail-header-row {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) minmax(320px, 396px);
+  column-gap: 40px;
+  align-items: start;
+}
+
+@mixin detail-header-left {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 6px;
+}
+
+@mixin detail-header-title {
+  @include ik-page-hero-title;
+  margin: 0 0 12px;
+  color: #ffffff;
+}
+
+@mixin detail-header-subtitle {
+  @include ik-body-text;
+  max-width: 320px;
+  margin: 0 0 20px;
+  color: #ffffff;
+}
+
+@mixin detail-header-button {
+  @include ik-body-text;
+  height: 44px;
+  min-width: 152px;
+  padding: 0 26px;
+  border: none;
+  border-radius: 4px;
+  background: #4834d4;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+@mixin detail-header-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 22px;
+  padding-top: 10px;
+}
+
+@mixin detail-header-label {
+  @include ik-section-title;
+  color: #ffffff;
+}
+
+@mixin detail-header-search {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 42px;
+  padding: 8px 16px;
+  background: #ffffff;
+  border-radius: 6px;
+  box-sizing: border-box;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+@mixin detail-header-search-input {
+  @include ik-card-heading;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: #333333;
+}
+
+@mixin detail-header-search-placeholder {
+  color: #999999;
+}
+
+@mixin detail-header-mobile-row {
+  grid-template-columns: 1fr;
+  row-gap: 14px;
+}

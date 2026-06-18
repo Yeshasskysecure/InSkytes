@@ -1,0 +1,16 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx/command-set-extension-manifest.schema.json",
+  "id": "254ffe71-3748-4555-9be1-fecc7e3f7a0a",
+  "alias": "SyncMetricsCommandSet",
+  "componentType": "Extension",
+  "extensionType": "ListViewCommandSet",
+  "version": "*",
+  "manifestVersion": 2,
+  "items": {
+    "SYNC_METRICS": {
+      "title": { "default": "Sync Metrics" },
+      "iconImageUrl": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%230078d4' d='M13.5 6.75a5.5 5.5 0 0 0-9.8-3.43L2.9 4.1V2.25a.75.75 0 0 0-1.5 0V6c0 .41.34.75.75.75H5.9a.75.75 0 0 0 0-1.5H3.87l.9-.88a4 4 0 0 1 7.23 2.38.75.75 0 0 0 1.5 0ZM2.5 9.25a5.5 5.5 0 0 0 9.8 3.43l.8-.78v1.85a.75.75 0 0 0 1.5 0V10a.75.75 0 0 0-.75-.75H10.1a.75.75 0 0 0 0 1.5h2.03l-.9.88A4 4 0 0 1 4 9.25a.75.75 0 0 0-1.5 0Z'/%3E%3C/svg%3E",
+      "type": "command"
+    }
+  }
+}

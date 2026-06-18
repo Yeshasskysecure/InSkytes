@@ -1,0 +1,635 @@
+@import '../../../styles/ikDesignTokens';
+.formWrapper {
+  background: #F5F0FF;
+  color: #231F20;
+  font-family: $ik-font-family;
+  padding: 40px 34px 60px;
+  border-radius: 8px;
+  width: min(940px, 100%);
+  max-width: calc(100vw - 48px);
+  margin: 0 auto;
+  box-shadow: none;
+  min-height: 0;
+  max-height: none;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  box-sizing: border-box;
+}
+
+/* allow the inner area to shrink and scroll inside the flex wrapper */
+.formInner {
+  flex: 0 0 auto;
+  min-height: 0;
+  overflow: visible;
+  -webkit-overflow-scrolling: touch;
+  padding: 0;
+  max-height: none;
+}
+
+.note {
+  @include ik-body-text;
+  color: #231F20;
+  margin-bottom: 6px;
+}
+
+.validationNotice {
+  @include ik-body-text;
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border: 1px solid rgba(211, 47, 47, 0.18);
+  border-radius: 8px;
+  background: rgba(211, 47, 47, 0.08);
+  color: #b42318;
+}
+
+
+.headerBar {
+  background: transparent;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  position: relative;
+  text-align: left;
+  margin-bottom: 42px;
+}
+
+.cardMeta {
+  padding: 34px 44px 68px;
+  background: #ffffff;
+  color: #231F20;
+  border-radius: 7px;
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 auto;
+  min-height: 100%;
+  box-sizing: border-box;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+}
+
+.fieldErrorWrap {
+  border-radius: 8px;
+}
+
+.title {
+  font-family: $ik-font-family;
+  font-size: 32px;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: 0;
+  margin: 0;
+  color: #231F20;
+}
+
+.titleWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.subtitle {
+  font-family: $ik-font-family;
+  font-size: 17px;
+  line-height: 1.45;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: #231F20;
+  margin-top: 4px;
+}
+
+.sensitiveWarning {
+  @include ik-body-text;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  margin-top: 6px;
+  color: #d32f2f;
+  svg {
+    flex-shrink: 0;
+    stroke: currentColor;
+    fill: none;
+  }
+}
+
+.closeBtn {
+  @include ik-section-title;
+  background: #ffffff;
+  border: 1px solid #5D2CC9;
+  color: #5D2CC9;
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  box-shadow: 0 6px 18px rgba(15,33,51,0.06);
+  cursor: pointer;
+  position: absolute;
+  top: 24px;
+  right: 20px;
+  z-index: 40;
+}
+
+
+
+.fieldFull {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+}
+
+.label {
+  @include ik-card-heading;
+  color: #231F20;
+  margin-bottom: 7px;
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: 0;
+}
+
+.labelText {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.requiredMark {
+  color: #d32f2f;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.labelRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+
+.labelRow .label {
+  margin-bottom: 0;
+}
+
+.clearValueBtn {
+  @include ik-body-text;
+  display: none;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(15, 33, 51, 0.06);
+  color: #475569;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.input {
+  font-family: $ik-font-family;
+  font-size: 17px;
+  line-height: 1.45;
+  font-weight: 400;
+  letter-spacing: 0;
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 16px;
+  border: 1px solid #8f939a;
+  border-radius: 7px;
+  background: #ffffff;
+  color: #231F20;
+  box-sizing: border-box;
+  transition: border-color 0.14s, box-shadow 0.14s;
+  &::placeholder {
+    color: #9CA3AF; /* lighter gray placeholder (standard) */
+    opacity: 1;
+  }
+
+  &:focus {
+    border-color: #5D2CC9;
+    box-shadow: 0 0 0 2px rgba(93, 44, 201, 0.12);
+    outline: none;
+  }
+}
+
+.select {
+  @extend .input;
+  height: 40px;
+  min-height: 40px;
+  appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, #6b7280 50%),
+    linear-gradient(135deg, #6b7280 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) calc(50% - 3px),
+    calc(100% - 12px) calc(50% - 3px);
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+  padding-right: 40px;
+}
+
+.select:disabled {
+  background-color: #f8fafc;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.reviewerStatusField {
+  grid-column: 1 / -1;
+  width: calc((100% - 50px) / 2);
+  min-width: 0;
+}
+
+.statusDropdown {
+  position: relative;
+  width: 100%;
+}
+
+.statusDropdownTrigger {
+  @extend .input;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  text-align: left;
+  cursor: pointer;
+  background-image: none;
+}
+
+.statusDropdownCaret {
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 7px solid #6b7280;
+  flex-shrink: 0;
+}
+
+.statusDropdownMenu {
+  position: static;
+  width: 100%;
+  margin-top: 6px;
+  padding: 7px;
+  border: 1px solid rgba(15,33,51,0.12);
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: 0 12px 30px rgba(15,33,51,0.12);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.statusDropdownOption {
+  @include ik-body-text;
+  width: 100%;
+  padding: 9px 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #231F20;
+  text-align: left;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.16s ease, color 0.16s ease;
+}
+
+.statusDropdownOptionSelected {
+  background: #f5f0ff;
+  color: #5D2CC9;
+  font-weight: 700;
+}
+
+.statusDropdownOption:hover {
+  background: #faf7ff;
+  color: #421F8F;
+}
+
+.inputSensitive {
+  border-color: #ff9800 !important;
+  
+  &:focus {
+    border-color: #ff9800 !important;
+    box-shadow: 0 12px 30px rgba(255, 152, 0, 0.15) !important;
+  }
+}
+
+.textarea {
+  font-family: $ik-font-family;
+  font-size: 17px;
+  line-height: 1.45;
+  font-weight: 400;
+  letter-spacing: 0;
+  width: 100%;
+  padding: 10px 16px;
+  min-height: 78px;
+  height: auto;
+  max-height: min(260px, 36vh);
+  resize: none;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  border: 1px solid #8f939a;
+  border-radius: 7px;
+  color: #231F20;
+  box-sizing: border-box;
+  &::placeholder {
+    color: #9CA3AF;
+    opacity: 1;
+  }
+
+  &:focus {
+    border-color: #5D2CC9;
+    box-shadow: 0 0 0 2px rgba(93, 44, 201, 0.12);
+    outline: none;
+  }
+}
+
+.titleTextarea {
+  @extend .textarea;
+  min-height: 40px;
+  height: auto;
+  max-height: min(150px, 24vh);
+  overflow-x: hidden;
+  overflow-y: hidden;
+  resize: none;
+}
+
+.descriptionTextarea {
+  @extend .textarea;
+  min-height: 104px;
+  height: auto;
+  max-height: min(320px, 40vh);
+  resize: none;
+  overflow-x: hidden;
+  overflow-y: hidden;
+}
+
+.textareaHasOverflow {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(93, 44, 201, 0.45) transparent;
+}
+
+.textareaHasOverflow::-webkit-scrollbar {
+  width: 8px;
+}
+
+.textareaHasOverflow::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.textareaHasOverflow::-webkit-scrollbar-thumb {
+  background: rgba(93, 44, 201, 0.35);
+  border-radius: 999px;
+}
+
+.fieldError {
+  border-color: #d32f2f !important;
+  box-shadow: 0 0 0 3px rgba(211, 47, 47, 0.08);
+}
+
+.fieldValidationMessage {
+  margin-top: 6px;
+  color: #b42318;
+  font-size: 12px;
+  line-height: 1.35;
+  font-weight: 600;
+}
+
+.textareaScrollable.inputSensitive {
+  border-color: #ff9800 !important;
+  
+  &:focus {
+    border-color: #ff9800 !important;
+    box-shadow: 0 8px 24px rgba(255, 152, 0, 0.15) !important;
+  }
+}
+
+.textareaScrollable {
+  font-family: $ik-font-family;
+  font-size: 17px;
+  line-height: 1.45;
+  font-weight: 400;
+  letter-spacing: 0;
+  width: 100%;
+  padding: 10px 16px;
+  min-height: 78px;
+  height: auto;
+  max-height: min(260px, 36vh);
+  resize: none;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  border: 1px solid #8f939a;
+  border-radius: 7px;
+  color: #231F20;
+  box-sizing: border-box;
+  &::placeholder {
+    color: #9CA3AF;
+    opacity: 1;
+  }
+
+  &:focus {
+    border-color: #5D2CC9;
+    box-shadow: 0 0 0 2px rgba(93, 44, 201, 0.12);
+    outline: none;
+  }
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 42px 50px;
+  align-items: start;
+}
+
+.grid > :nth-child(1) {
+  order: 1;
+}
+
+.grid > :nth-child(10) {
+  order: 2;
+}
+
+.grid > :nth-child(7) {
+  order: 3;
+}
+
+.grid > :nth-child(4) {
+  order: 4;
+}
+
+.grid > :nth-child(2) {
+  order: 5;
+}
+
+.grid > :nth-child(3) {
+  order: 6;
+}
+
+.grid > :nth-child(5) {
+  order: 7;
+}
+
+.grid > :nth-child(6) {
+  order: 8;
+}
+
+.grid > :nth-child(9) {
+  order: 9;
+}
+
+.grid > :nth-child(8) {
+  order: 10;
+}
+
+.grid > :nth-child(11) {
+  order: 11;
+}
+
+.grid > :nth-child(n + 12) {
+  order: 12;
+}
+
+/* left summary panel removed as per user request */
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 20px;
+  margin-top: 42px;
+  position: static;
+  background: transparent;
+  padding: 0;
+  z-index: 5;
+}
+
+.submitBtn {
+  @include ik-button-text;
+  min-width: 116px;
+  height: 40px;
+  padding: 0 22px;
+  background: #5D2CC9;
+  color: #fff;
+  border: 1px solid #5D2CC9;
+  border-radius: 6px;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(72,52,212,0.14);
+  font-weight: 700;
+
+  &:hover,
+  &:focus-visible {
+    background: #4c22ad;
+    border-color: #4c22ad;
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba(93, 44, 201, 0.32);
+    outline-offset: 2px;
+  }
+}
+
+.closeActionBtn {
+  @include ik-button-text;
+  min-width: 106px;
+  height: 40px;
+  padding: 0 22px;
+  background: #ffffff;
+  color: #5D2CC9;
+  border: 1px solid #5D2CC9;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.charCount {
+  @include ik-body-text;
+  align-self: flex-end;
+  color: #6b7280;
+  font-size: 12px;
+  line-height: 1.2;
+  margin-top: 5px;
+}
+
+.compactDensity {
+  width: min(752px, 100%);
+  padding: 32px 27px 48px;
+
+  .headerBar {
+    margin-bottom: 34px;
+  }
+
+  .cardMeta {
+    padding: 27px 35px 54px;
+  }
+
+  .title {
+    font-size: 25.6px;
+    line-height: 1.2;
+  }
+
+  .subtitle,
+  .input,
+  .textarea,
+  .textareaScrollable,
+  .statusDropdownOption {
+    font-size: 13.6px;
+    line-height: 1.45;
+  }
+
+  .label {
+    font-size: 11.2px;
+    line-height: 16px;
+    margin-bottom: 6px;
+  }
+
+  .grid {
+    gap: 34px 40px;
+  }
+
+  .actions {
+    gap: 16px;
+    margin-top: 34px;
+  }
+
+  .submitBtn,
+  .closeActionBtn {
+    height: 32px;
+    min-width: 92px;
+    padding: 0 18px;
+    font-size: 10.4px;
+  }
+
+  .fieldValidationMessage,
+  .charCount {
+    font-size: 9.6px;
+  }
+}
+
+@media (max-width: 640px) {
+  .formWrapper {
+    padding: 28px 24px 44px;
+    max-height: none;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.formInner {
+  scrollbar-width: none;
+}
+
+.formInner::-webkit-scrollbar {
+  display: none;
+}

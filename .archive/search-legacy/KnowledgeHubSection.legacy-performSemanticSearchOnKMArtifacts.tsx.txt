@@ -1,0 +1,891 @@
+  /**
+   * Search-driven Chat Response (Library Agnostic)
+   * This is used when the user asks questions in the chat.
+   */
+  const performSemanticSearchOnKMArtifacts = async (query: string, history: ChatMessage[] = []): Promise<{ answerText: string; documentLinks: string; documents: DocumentItem[] }> => {
+    if (!openAIServiceRef.current || !searchServiceRef.current) {
+      return { answerText: 'Search service not available.', documentLinks: '', documents: [] };
+    }
+
+    try {
+      console.log('🔍 Performing "Full-Proof" Bot retrieval (SP Discovery + AI Scanning)');
+
+      const searchResults = await searchServiceRef.current.searchDocuments(query, KM_DATA_HUB_FILTER);
+
+      if (searchResults.length === 0) {
+        return {
+          answerText: "I couldn't find any documents related to your query that are currently marked as 'Active'.",
+          documentLinks: '',
+          documents: []
+        };
+      }
+
+      const searchInput = query;
+      const webUrl = props.context?.pageContext.web.absoluteUrl || '';
+      const metadataResults = searchResults.map((item: ISearchResult) => {
+        const fileName = item.url ? decodeURIComponent(item.url.split('/').pop() || item.title) : item.title;
+        const fileExtension = item.url ? item.url.split('.').pop()?.toUpperCase() : (item.fileType || 'DOC');
+
+        return {
+          document: {
+            ...item,
+            id: Number(item.id) || Math.floor(Math.random() * 100000),
+            title: item.title,
+            fileName,
+            description: item.description || item.content?.substring(0, 150) || '',
+            contributor: item.author || 'Contributor',
+            fileType: fileExtension,
+            serverRelativeUrl: item.url || '',
+            fileRef: item.url || '',
+            abstract: item.abstract || item.description || ''
+          },
+          similarity: item.semanticScore || item.score || 0
+        };
+      });
+
+      const topCandidates = metadataResults.slice(0, SEARCH_CONTENT_SCAN_LIMIT).map(r => r.document);
+
+      // Scan more relevant candidates than before, but do it in small batches so SharePoint is not flooded.
+      console.log(`🚀 Scanning up to ${topCandidates.length} relevant documents with cached full-text extraction...`);
+      const allDocsWithContent: any[] = [];
+      for (let i = 0; i < topCandidates.length; i += SEARCH_CONTENT_SCAN_BATCH_SIZE) {
+        const batch = topCandidates.slice(i, i + SEARCH_CONTENT_SCAN_BATCH_SIZE);
+        const batchDocs = await Promise.all(
+          batch.map(async (doc) => {
+            const cacheKey = doc.serverRelativeUrl || doc.fileRef || doc.url || String(doc.id);
+            let documentContent = documentContentCache.current.get(cacheKey);
+
+            if (!documentContent && doc.serverRelativeUrl && doc.fileType) {
+              const fileType = doc.fileType.toUpperCase();
+              if (SEARCH_SCAN_SUPPORTED_TYPES.includes(fileType)) {
+                let pendingFetch = pendingDocumentContentFetches.current.get(cacheKey);
+                if (!pendingFetch) {
+                  pendingFetch = (async () => {
+                    try {
+                      const serverUrl = toServerRelativePath(doc.serverRelativeUrl);
+                      const escapedServerUrl = serverUrl.replace(/'/g, "''");
+                      const fileUrl = `${webUrl}/_api/web/GetFileByServerRelativeUrl('${escapedServerUrl}')/$value`;
+                      const fileResponse = await props.context!.spHttpClient.get(fileUrl, SPHttpClient.configurations.v1);
+                      if (fileResponse.ok) {
+                        const blob = await fileResponse.blob();
+                        const file = new File([blob], doc.fileName, { type: blob.type });
+                        const parseResult = await DocumentParser.parseFile(file);
+                        if (parseResult.success && parseResult.text) {
+                          documentContentCache.current.set(cacheKey, parseResult.text);
+                          return parseResult.text;
+                        }
+                      }
+                    } catch (err) {
+                      console.warn(`Content fetch error for ${doc.id}:`, err);
+                    } finally {
+                      pendingDocumentContentFetches.current.delete(cacheKey);
+                    }
+                    return '';
+                  })();
+                  pendingDocumentContentFetches.current.set(cacheKey, pendingFetch);
+                }
+                documentContent = await pendingFetch;
+              }
+            }
+
+            return { ...doc, documentContent: documentContent || '' };
+          })
+        );
+        allDocsWithContent.push(...batchDocs);
+      }
+
+      // Perform final refined semantic search with content
+      let semanticResults = await openAIServiceRef.current.semanticSearchLocalDocuments(
+        searchInput,
+        allDocsWithContent,
+        10
+      );
+
+      const keywordTerms = extractKeywordTerms(searchInput);
+      semanticResults = semanticResults
+        .map(result => {
+          const doc = result.document || {};
+          const contentMatches = countSearchTermOccurrences(doc.documentContent || '', keywordTerms);
+          const titleMatches = countSearchTermOccurrences(doc.title || '', keywordTerms);
+          const fileNameMatches = countSearchTermOccurrences(doc.fileName || '', keywordTerms);
+          const descriptionMatches = countSearchTermOccurrences(doc.description || '', keywordTerms);
+          const totalKeywordMatches = contentMatches + titleMatches + fileNameMatches + descriptionMatches;
+          const keywordScore =
+            (contentMatches * 25) +
+            (titleMatches * 15) +
+            (fileNameMatches * 12) +
+            (descriptionMatches * 8);
+
+          return {
+            ...result,
+            similarity: result.similarity + keywordScore,
+            document: {
+              ...doc,
+              keywordMatchCount: totalKeywordMatches,
+              contentKeywordMatchCount: contentMatches
+            }
+          };
+        })
+        .sort((a, b) => {
+          const matchA = Number(a.document?.keywordMatchCount || 0);
+          const matchB = Number(b.document?.keywordMatchCount || 0);
+          if (matchA !== matchB && (matchA > 0 || matchB > 0)) {
+            return matchB - matchA;
+          }
+
+          return b.similarity - a.similarity;
+        });
+
+      console.log('Semantic search returned results:', semanticResults.length);
+      if (semanticResults.length > 0) {
+        console.log('Top result similarity:', semanticResults[0].similarity);
+        console.log('Top result document title:', semanticResults[0].document?.title || semanticResults[0].document?.fileName);
+        console.log('All result similarities:', semanticResults.slice(0, 10).map(r => ({ similarity: r.similarity, title: r.document?.fileName || r.document?.title })));
+      }
+
+      if (semanticResults.length === 0) {
+        console.warn('No semantic search results found for query:', query);
+        return { answerText: '', documentLinks: '', documents: [] };
+      }
+      const searchLower = searchInput.toLowerCase().trim();
+      const knownTerms = ['poc', 'km', 'prma', 'heor', 'cpc', 'regulatory', 'oncology', 'pharmacovigilance', 'bloomfire'];
+      const hasKnownTerm = knownTerms.some(term => searchLower.includes(term));
+
+      let filenameMatchedResults: typeof semanticResults = [];
+      if (hasKnownTerm) {
+        console.log('🔍 Query contains known term, doing explicit filename/title matching FIRST...');
+
+        // Extract known terms from query (e.g., "poc" from "what is poc")
+        const foundKnownTerms = knownTerms.filter(term => searchLower.includes(term));
+
+        // Use a broader matching strategy for known terms (especially acronyms like POC)
+        filenameMatchedResults = semanticResults.filter(result => {
+          const doc = result.document;
+          if (!doc) return false;
+
+          const fileName = (doc.fileName || '').toLowerCase();
+          const title = (doc.title || '').toLowerCase();
+
+          // Check for exact word match for acronyms (e.g., "poc" should match "poc" or "poc_")
+          return foundKnownTerms.some(term => {
+            const regex = new RegExp(`\\b${term}\\b|[\\b_]${term}[\\b_]`, 'i');
+            return regex.test(fileName) || regex.test(title);
+          });
+        });
+
+        if (filenameMatchedResults.length > 0) {
+          console.log(`✅ Found ${filenameMatchedResults.length} documents with explicit match for known term: ${foundKnownTerms.join(', ')}`);
+          // Give filename/title matches a boost, then let content keyword counts decide final order.
+          filenameMatchedResults.forEach(r => r.similarity += 100);
+          semanticResults.sort((a, b) => {
+            const matchA = Number(a.document?.keywordMatchCount || 0);
+            const matchB = Number(b.document?.keywordMatchCount || 0);
+            if (matchA !== matchB && (matchA > 0 || matchB > 0)) {
+              return matchB - matchA;
+            }
+
+            return b.similarity - a.similarity;
+          });
+        }
+      }
+
+      // Filter results by similarity score - only show results with meaningful matches
+      // Keyword matches have high similarity scores (10+), semantic matches have similarity > 0.3
+      // We'll use a lower threshold to ensure keyword matches are included
+      // Keyword matches typically have similarity >= 5, so we'll use >= 0.3 to catch both
+      const filteredResults = semanticResults.filter(result => {
+        // Keyword matches (similarity >= 5) are always included
+        // Semantic matches need similarity >= 0.3 to be considered relevant
+        // Lower threshold ensures we don't filter out valid keyword matches
+        return result.similarity >= 0.3;
+      });
+
+      console.log('Filtered results (similarity >= 0.3):', filteredResults.length);
+      console.log('Filename matched results (for known terms):', filenameMatchedResults.length);
+
+      let finalFilteredResults: typeof semanticResults = [];
+
+      if (filteredResults.length > 0) {
+        console.log('Using similarity-filtered results');
+        finalFilteredResults = filteredResults;
+      }
+      // If no similarity matches but query has known term, try lower threshold
+      else if (hasKnownTerm && semanticResults.length > 0) {
+        console.log('Query contains known term, trying lower similarity threshold (>= 0.2)...');
+        const lowerThresholdResults = semanticResults.filter(result => result.similarity >= 0.2);
+        if (lowerThresholdResults.length > 0) {
+          console.log(`Found ${lowerThresholdResults.length} results with lower threshold`);
+          finalFilteredResults = lowerThresholdResults.slice(0, 5); // Limit to top 5
+        }
+      }
+
+      // Final fallback: If still no results, check for filename/title matches (for any query)
+      if (finalFilteredResults.length === 0 && semanticResults.length > 0) {
+        console.warn('All results filtered out due to low similarity. Top similarity was:', semanticResults[0].similarity);
+        console.warn('Checking for filename/title matches as final fallback...');
+
+        const queryTerms = searchLower.split(/\s+/).filter(term => term.length >= 1); // Allow single char terms
+
+        // Check if any documents have the query term in filename or title
+        const filenameMatches = semanticResults.filter(result => {
+          const doc = result.document;
+          if (!doc) return false;
+
+          const fileName = (doc.fileName || '').toLowerCase();
+          const title = (doc.title || '').toLowerCase();
+          const description = (doc.description || '').toLowerCase();
+
+          // Check if any query term appears in filename, title, or description
+          const hasMatch = queryTerms.some(term =>
+            fileName.includes(term) ||
+            title.includes(term) ||
+            description.includes(term)
+          ) ||
+            fileName.includes(searchLower) ||
+            title.includes(searchLower) ||
+            description.includes(searchLower);
+
+          return hasMatch;
+        });
+
+        if (filenameMatches.length > 0) {
+          console.log(`Found ${filenameMatches.length} documents with filename/title matches in final fallback`);
+          // Sort by similarity and take top matches
+          filenameMatches.sort((a, b) => b.similarity - a.similarity);
+          finalFilteredResults = filenameMatches.slice(0, 5); // Limit to top 5 matches
+        } else {
+          console.warn('No filename/title matches found in final fallback either');
+        }
+      }
+
+      // If still no results, return empty
+      if (finalFilteredResults.length === 0) {
+        console.warn('No results found after all filtering attempts');
+        console.warn('All semantic results:', semanticResults.map(r => ({
+          similarity: r.similarity,
+          fileName: r.document?.fileName,
+          title: r.document?.title
+        })));
+        return { answerText: '', documentLinks: '', documents: [] };
+      }
+
+      // Log the final filtered results
+      console.log('=== FINAL FILTERED RESULTS ===');
+      console.log('Final filtered results count:', finalFilteredResults.length);
+      finalFilteredResults.slice(0, 5).forEach((result, index) => {
+        console.log(`Result ${index + 1}:`, {
+          similarity: result.similarity,
+          fileName: result.document?.fileName,
+          title: result.document?.title,
+          hasServerRelativeUrl: !!result.document?.serverRelativeUrl,
+          hasFileRef: !!result.document?.fileRef
+        });
+      });
+
+      // Generate document URLs and format results
+      const urlObj = new URL(webUrl);
+      const serverRoot = `${urlObj.protocol}//${urlObj.host}`;
+      console.log('Processing filtered results, count:', finalFilteredResults.length);
+      const topResult = finalFilteredResults[0];
+      const topDoc = topResult.document;
+      console.log('Top document structure:', {
+        hasServerRelativeUrl: !!topDoc.serverRelativeUrl,
+        hasFileRef: !!topDoc.fileRef,
+        hasFileName: !!topDoc.fileName,
+        hasTitle: !!topDoc.title,
+        similarity: topResult.similarity,
+        allKeys: Object.keys(topDoc)
+      });
+
+      let abstract = '';
+
+      if (topDoc.description && topDoc.description.trim() !== '' && topDoc.description !== '-') {
+        abstract = topDoc.description.trim();
+        console.log('Found abstract in description field:', abstract.substring(0, 100));
+      }
+      // Try abstract field (in case it's stored differently)
+      else if (topDoc.abstract && topDoc.abstract.trim() !== '' && topDoc.abstract !== '-') {
+        abstract = topDoc.abstract.trim();
+        console.log('Found abstract in abstract field:', abstract.substring(0, 100));
+      }
+      // Try capitalized versions (in case of field name variations)
+      else if (topDoc.Description && topDoc.Description.trim() !== '' && topDoc.Description !== '-') {
+        abstract = topDoc.Description.trim();
+        console.log('Found abstract in Description field:', abstract.substring(0, 100));
+      }
+      else if (topDoc.Abstract && topDoc.Abstract.trim() !== '' && topDoc.Abstract !== '-') {
+        abstract = topDoc.Abstract.trim();
+        console.log('Found abstract in Abstract field:', abstract.substring(0, 100));
+      } else {
+        console.log('No abstract found in any field. Document:', {
+          title: topDoc.title,
+          fileName: topDoc.fileName,
+          hasDescription: !!topDoc.description,
+          descriptionValue: topDoc.description,
+          hasAbstract: !!topDoc.abstract,
+          abstractValue: topDoc.abstract
+        });
+      }
+
+      let answerText = '';
+      let documentLinks = '';
+
+      if (abstract && abstract.length > 0) {
+        answerText = abstract;
+        console.log('Using abstract as answerText:', answerText.substring(0, 100));
+      } else {
+        console.log('Abstract is empty, generating summary from document content');
+        // If no abstract, try to extract meaningful summary from document content
+        if (topDoc.documentContent && topDoc.documentContent.length > 100) {
+          // Extract more content (first 1000 chars) for better summary
+          let content = topDoc.documentContent.substring(0, 1000).trim();
+          // Remove filename patterns
+          content = content.replace(/^[A-Za-z0-9_.-]+\s*[:-]?\s*/i, '');
+
+          if (content.length > 100 && !content.match(/^[A-Za-z0-9_.-]+$/)) {
+            // Try to find a good stopping point (end of paragraph or multiple sentences)
+            // Look for multiple periods or newlines
+            const lastPeriod = content.lastIndexOf('.');
+            const lastNewline = content.lastIndexOf('\n');
+            const lastBreak = Math.max(lastPeriod, lastNewline);
+
+            if (lastBreak > 200) {
+              // Take content up to the last break point
+              answerText = content.substring(0, lastBreak + 1).trim();
+            } else {
+              // If no good break point, take first 400 chars and add ellipsis
+              answerText = content.substring(0, 400).trim();
+              if (content.length > 400) {
+                answerText += '...';
+              }
+            }
+          } else {
+            // Content is too short or looks like filename, try more content
+            content = topDoc.documentContent.substring(0, 2000).trim();
+            content = content.replace(/^[A-Za-z0-9_.-]+\s*[:-]?\s*/i, '');
+            if (content.length > 100) {
+              const lastPeriod = content.lastIndexOf('.');
+              if (lastPeriod > 200) {
+                answerText = content.substring(0, lastPeriod + 1).trim();
+              } else {
+                answerText = content.substring(0, 500).trim();
+              }
+            }
+          }
+        }
+
+        if (!answerText || answerText.trim().length === 0 || /^[A-Za-z0-9_.-]+$/.test(answerText.trim())) {
+          answerText = `This document provides comprehensive information about ${searchInput}, covering its key aspects, details, and relevant information. It is intended for internal use and includes detailed information on the topic.`;
+        }
+      }
+
+      const looksLikeFilename = answerText && /^[A-Za-z0-9_.-]+$/.test(answerText.trim());
+
+      if (!answerText || answerText.trim().length === 0 || looksLikeFilename) {
+
+        answerText = `This document provides comprehensive information about ${searchInput}, covering its key aspects, details, and relevant information. It is intended for internal use and includes detailed information on the topic.`;
+      }
+
+
+      if (!answerText || answerText.trim().length === 0 || /^[A-Za-z0-9_.-]+$/.test(answerText.trim())) {
+
+        answerText = `This document provides comprehensive information about ${searchInput}, covering its key aspects, details, and relevant information. It is intended for internal use and includes detailed information on the topic.`;
+      }
+
+      // Ensure answerText ends with a period for proper formatting
+      if (answerText && !answerText.trim().endsWith('.')) {
+        answerText = answerText.trim() + '.';
+      }
+
+      // Log final answerText for debugging
+      console.log('Final answerText before link:', answerText.substring(0, 150));
+      console.log('AnswerText length:', answerText.length);
+      console.log('Top document abstract value:', abstract);
+      console.log('Top document serverRelativeUrl:', topDoc.serverRelativeUrl);
+      console.log('Top document fileRef:', topDoc.fileRef);
+      console.log('Top document fileName:', topDoc.fileName);
+      console.log('Top document full object keys:', Object.keys(topDoc));
+
+      let serverRelativeUrl = topDoc.fileRef || topDoc.serverRelativeUrl || '';
+
+      console.log('🔍 URL Generation Debug - Top Document:', {
+        fileName: topDoc.fileName,
+        title: topDoc.title,
+        fileRef: topDoc.fileRef,
+        serverRelativeUrl: topDoc.serverRelativeUrl,
+        fileType: topDoc.fileType,
+        allKeys: Object.keys(topDoc)
+      });
+
+      // Normalize the URL - remove any duplicate site paths
+      if (serverRelativeUrl) {
+        const sitePath = props.context?.pageContext.web.serverRelativeUrl || '';
+        // Remove duplicate site paths (e.g., /sites/MigrationTest2/sites/MigrationTest2/...)
+        if (sitePath && serverRelativeUrl.includes(`${sitePath}${sitePath}`)) {
+          serverRelativeUrl = serverRelativeUrl.replace(`${sitePath}${sitePath}`, sitePath);
+        }
+
+        if (serverRelativeUrl.includes('%2520') || serverRelativeUrl.includes('%252F')) {
+          try {
+            serverRelativeUrl = decodeURIComponent(serverRelativeUrl);
+          } catch (e) {
+            // If decoding fails, continue with original
+          }
+        }
+        console.log('🔍 After normalization, serverRelativeUrl:', serverRelativeUrl);
+      }
+
+      // If still no serverRelativeUrl, construct it from fileName
+      if (!serverRelativeUrl && topDoc.fileName) {
+        const siteRelativePath = props.context?.pageContext.web.serverRelativeUrl || '';
+        // Ensure fileName doesn't have URL-encoded characters
+        let cleanFileName = topDoc.fileName;
+        try {
+          // Try to decode if it looks encoded
+          if (cleanFileName.includes('%')) {
+            cleanFileName = decodeURIComponent(cleanFileName);
+          }
+        } catch (e) {
+          // If decoding fails, use original
+        }
+        serverRelativeUrl = `${siteRelativePath}/${LIBRARY_NAMES.kmDataHub}/${cleanFileName}`;
+        console.log('🔍 Constructed serverRelativeUrl from fileName:', serverRelativeUrl);
+      }
+
+      // CRITICAL: If we still don't have serverRelativeUrl, try to get it from the original SharePoint item
+      if (!serverRelativeUrl && topDoc.id) {
+        console.warn('🔍 No serverRelativeUrl found, attempting to fetch from SharePoint item ID:', topDoc.id);
+        try {
+          // We can't access formattedDocs here, but we can try to construct from fileName
+          if (topDoc.fileName) {
+            const siteRelativePath = props.context?.pageContext.web.serverRelativeUrl || '';
+            serverRelativeUrl = `${siteRelativePath}/${LIBRARY_NAMES.kmDataHub}/${topDoc.fileName}`;
+            console.log('🔍 Constructed serverRelativeUrl as fallback:', serverRelativeUrl);
+          }
+        } catch (err) {
+          console.error('🔍 Error constructing fallback URL:', err);
+        }
+      }
+
+      // Always try to generate a link if we have any document information
+      if (serverRelativeUrl) {
+        // Ensure it starts with / and doesn't have duplicate paths
+        if (!serverRelativeUrl.startsWith('/')) {
+          serverRelativeUrl = `/${serverRelativeUrl}`;
+        }
+
+        // Remove any double slashes (except after protocol)
+        serverRelativeUrl = serverRelativeUrl.replace(/([^:]\/)\/+/g, '$1');
+
+        const fileExtension = (topDoc.fileType || topDoc.fileName?.split('.').pop() || '').toLowerCase();
+        let docUrl = '';
+
+        try {
+          // Validate serverRelativeUrl before using it
+          if (!serverRelativeUrl || serverRelativeUrl.trim().length === 0) {
+            throw new Error('serverRelativeUrl is empty');
+          }
+
+          // Ensure serverRelativeUrl is a valid path (starts with /)
+          if (!serverRelativeUrl.startsWith('/')) {
+            serverRelativeUrl = `/${serverRelativeUrl}`;
+          }
+
+          // Log the serverRelativeUrl for debugging
+          console.log('🔍 Constructing URL from serverRelativeUrl:', serverRelativeUrl);
+          console.log('🔍 File extension:', fileExtension);
+          console.log('🔍 Web URL:', webUrl);
+
+          if (['docx', 'doc', 'pptx', 'ppt', 'xlsx', 'xls', 'xlsm', 'xlsb', 'xltx', 'xltm'].includes(fileExtension)) {
+
+            const encodedServerUrl = encodeURIComponent(serverRelativeUrl);
+            docUrl = `${webUrl}/_layouts/15/WopiFrame.aspx?sourcedoc=${encodedServerUrl}&action=default`;
+            console.log('🔍 Generated WopiFrame URL (length):', docUrl.length);
+          } else {
+            // For non-Office files, ensure the URL is properly constructed
+            docUrl = `${serverRoot}${serverRelativeUrl}`;
+            console.log('🔍 Generated direct file URL (length):', docUrl.length);
+          }
+
+          // Validate URL before using
+          try {
+            const urlObj = new URL(docUrl);
+            // Reconstruct URL to ensure it's properly formatted
+            docUrl = urlObj.toString();
+            console.log('✅ URL validated and reconstructed successfully');
+
+            const displayTitle = (topDoc.title && topDoc.title.trim() !== '' && !isPlaceholderTitle(topDoc.title))
+              ? topDoc.title
+              : (topDoc.fileName || 'Document');
+
+            // Use helper function to clean title - prioritizes fileName if title is malformed
+            let cleanTitle = cleanDocumentTitle(displayTitle, topDoc.fileName);
+            console.log('🔍 Original title:', topDoc.title);
+            console.log('🔍 Original fileName:', topDoc.fileName);
+            console.log('🔍 Display title (title or fileName):', displayTitle);
+            console.log('🔍 Cleaned title:', cleanTitle);
+
+            // Get abstract/description for the first document
+            // Try multiple sources: the abstract variable (from earlier), then description, then abstract field
+            const topAbstract = abstract || topDoc.description || topDoc.abstract || topDoc.Description || topDoc.Abstract || '';
+            let abstractText = '';
+            if (topAbstract && topAbstract.trim() !== '' && topAbstract !== '-') {
+              // Format as conclusive statement - ensure it ends with a period
+              let formattedAbstract = topAbstract.trim();
+              if (!formattedAbstract.endsWith('.') && !formattedAbstract.endsWith('!') && !formattedAbstract.endsWith('?')) {
+                formattedAbstract += '.';
+              }
+              abstractText = `\n\n${formattedAbstract}`;
+            }
+            if (cleanTitle.includes('%') || cleanTitle.includes('&action=') || cleanTitle.includes('://') || cleanTitle.includes('?sourcedoc=')) {
+              console.warn('⚠️ Title still contains URL patterns after cleaning, using fileName fallback:', cleanTitle);
+              // Use fileName as fallback
+              if (topDoc.fileName) {
+                cleanTitle = cleanDocumentTitle(topDoc.fileName, topDoc.fileName);
+              } else {
+                cleanTitle = 'Document';
+              }
+            }
+
+            // Ensure markdown link is properly formatted - escape brackets in title if needed
+            if (cleanTitle.includes(']') || cleanTitle.includes('[')) {
+              cleanTitle = cleanTitle.replace(/\[/g, '\\[').replace(/\]/g, '\\]');
+            }
+
+            // Final validation: ensure cleanTitle is not empty
+            if (!cleanTitle || cleanTitle.length === 0) {
+              cleanTitle = 'Document';
+            }
+
+            // Only generate link if both URL and title are valid
+            if (docUrl && cleanTitle && cleanTitle.length > 0) {
+              documentLinks = `\n\n**[${cleanTitle}](${docUrl})**${abstractText}`;
+              console.log('✅ Generated document link with abstract:', documentLinks.substring(0, 200));
+              console.log('Document URL:', docUrl);
+              console.log('Document title:', cleanTitle);
+              console.log('URL length:', docUrl.length);
+            } else {
+              console.error('❌ Cannot generate document link - invalid URL or title');
+              console.error('URL:', docUrl);
+              console.error('Title:', cleanTitle);
+            }
+          } catch (urlError) {
+            console.error('Invalid URL generated for top document:', docUrl, urlError);
+            // Fall through to fileName fallback
+            throw urlError;
+          }
+        } catch (error) {
+          console.warn('Error generating URL for top document, trying fallback:', error);
+          // Fall through to fileName fallback below
+        }
+      }
+
+      // Fallback: try to construct URL from fileName if above failed
+      if (!documentLinks && topDoc.fileName) {
+        // Last resort: try to construct URL from fileName even if we don't have serverRelativeUrl
+        const siteRelativePath = props.context?.pageContext.web.serverRelativeUrl || '';
+        const fallbackUrl = `${siteRelativePath}/${LIBRARY_NAMES.kmDataHub}/${topDoc.fileName}`;
+        const fileExtension = (topDoc.fileName?.split('.').pop() || '').toLowerCase();
+        let docUrl = '';
+
+        if (['docx', 'doc', 'pptx', 'ppt', 'xlsx', 'xls', 'xlsm', 'xlsb', 'xltx', 'xltm'].includes(fileExtension)) {
+          const encodedUrl = encodeURIComponent(fallbackUrl);
+          docUrl = `${webUrl}/_layouts/15/WopiFrame.aspx?sourcedoc=${encodedUrl}&action=default`;
+        } else {
+          docUrl = `${serverRoot}${fallbackUrl}`;
+        }
+
+        // Validate and reconstruct URL
+        try {
+          const urlObj = new URL(docUrl);
+          docUrl = urlObj.toString();
+        } catch (urlError) {
+          console.warn('Invalid fallback URL, using as-is:', docUrl);
+        }
+
+        // Use Title if available and not empty, and not a placeholder, otherwise use fileName
+        const displayTitle = (topDoc.title && topDoc.title.trim() !== '' && !isPlaceholderTitle(topDoc.title))
+          ? topDoc.title
+          : (topDoc.fileName || 'Document');
+
+        // Use helper function to clean title
+        let cleanTitle = cleanDocumentTitle(displayTitle, topDoc.fileName);
+
+        const topAbstract = abstract || topDoc.description || topDoc.abstract || topDoc.Description || topDoc.Abstract || '';
+        let abstractText = '';
+        if (topAbstract && topAbstract.trim() !== '' && topAbstract !== '-') {
+          // Format as conclusive statement - ensure it ends with a period
+          let formattedAbstract = topAbstract.trim();
+          if (!formattedAbstract.endsWith('.') && !formattedAbstract.endsWith('!') && !formattedAbstract.endsWith('?')) {
+            formattedAbstract += '.';
+          }
+          abstractText = `\n\n${formattedAbstract}`;
+        }
+
+        documentLinks = `\n\n**[${cleanTitle}](${docUrl})**${abstractText}`;
+        console.log('Generated document link (fallback from fileName) with abstract:', documentLinks.substring(0, 200));
+      } else {
+        console.error('Cannot generate document link - no serverRelativeUrl, fileRef, or fileName available');
+        console.error('Top document:', topDoc);
+        console.error('Top document keys:', Object.keys(topDoc));
+      }
+
+      // If there are more documents, show them too
+      if (finalFilteredResults.length > 1 && documentLinks) {
+        documentLinks += '\n\n📚 **Additional Relevant Documents:**\n\n';
+        finalFilteredResults.slice(1, 5).forEach((result, index) => {
+          const doc = result.document;
+
+          // Try multiple sources for serverRelativeUrl, prioritizing fileRef (most reliable)
+          let docServerUrl = doc.fileRef || doc.serverRelativeUrl || '';
+
+          // Normalize the URL - remove any duplicate site paths
+          if (docServerUrl) {
+            // Remove duplicate site paths (e.g., /sites/MigrationTest2/sites/MigrationTest2/...)
+            const sitePath = props.context?.pageContext.web.serverRelativeUrl || '';
+            if (sitePath && docServerUrl.includes(`${sitePath}${sitePath}`)) {
+              docServerUrl = docServerUrl.replace(`${sitePath}${sitePath}`, sitePath);
+            }
+          }
+
+          // If still no serverRelativeUrl, construct it from fileName
+          if (!docServerUrl && doc.fileName) {
+            const siteRelativePath = props.context?.pageContext.web.serverRelativeUrl || '';
+            docServerUrl = `${siteRelativePath}/${LIBRARY_NAMES.kmDataHub}/${doc.fileName}`;
+          }
+
+          if (docServerUrl) {
+            // Ensure it starts with / and doesn't have duplicate paths
+            if (!docServerUrl.startsWith('/')) {
+              docServerUrl = `/${docServerUrl}`;
+            }
+
+            // Remove any double slashes (except after protocol)
+            docServerUrl = docServerUrl.replace(/([^:]\/)\/+/g, '$1');
+
+            const docFileExt = (doc.fileType || doc.fileName?.split('.').pop() || '').toLowerCase();
+            let additionalDocUrl = '';
+
+            try {
+              if (['docx', 'doc', 'pptx', 'ppt', 'xlsx', 'xls', 'xlsm', 'xlsb', 'xltx', 'xltm'].includes(docFileExt)) {
+                const encodedUrl = encodeURIComponent(docServerUrl);
+                additionalDocUrl = `${webUrl}/_layouts/15/WopiFrame.aspx?sourcedoc=${encodedUrl}&action=default`;
+              } else {
+                // For other files, use direct link
+                additionalDocUrl = `${serverRoot}${docServerUrl}`;
+              }
+
+              // Validate URL before adding
+              try {
+                const urlObj = new URL(additionalDocUrl);
+                // Reconstruct URL to ensure it's properly formatted
+                additionalDocUrl = urlObj.toString();
+
+                const additionalAbstract = doc.description || doc.abstract || '';
+                // Use Title if available and not empty, and not a placeholder, otherwise use fileName
+                const displayTitle = (doc.title && doc.title.trim() !== '' && !isPlaceholderTitle(doc.title))
+                  ? doc.title
+                  : (doc.fileName || 'Document');
+
+                // Use helper function to clean title
+                let cleanTitle = cleanDocumentTitle(displayTitle, doc.fileName);
+
+                documentLinks += `${index + 2}. **[${cleanTitle}](${additionalDocUrl})**\n`;
+                if (additionalAbstract && additionalAbstract.trim() !== '' && additionalAbstract !== '-') {
+                  // Format as conclusive statement - show full abstract, ensure it ends with a period
+                  let formattedAbstract = additionalAbstract.trim();
+                  if (!formattedAbstract.endsWith('.') && !formattedAbstract.endsWith('!') && !formattedAbstract.endsWith('?')) {
+                    formattedAbstract += '.';
+                  }
+                  documentLinks += `   ${formattedAbstract}\n`;
+                }
+                documentLinks += '\n';
+              } catch (urlError) {
+                console.warn(`Invalid URL generated for document ${doc.fileName}:`, additionalDocUrl, urlError);
+                // Skip this document if URL is invalid
+              }
+            } catch (error) {
+              console.error(`Error generating URL for additional document ${doc.fileName}:`, error);
+              console.error('Document data:', { fileRef: doc.fileRef, serverRelativeUrl: doc.serverRelativeUrl, fileName: doc.fileName });
+            }
+          } else {
+            console.warn(`Cannot generate URL for additional document - missing fileRef, serverRelativeUrl, and fileName:`, doc);
+          }
+        });
+      }
+      const isFilenamePattern = answerText && /^[A-Za-z0-9_.-]+$/.test(answerText.trim());
+
+      if (!answerText || answerText.trim().length === 0 || isFilenamePattern) {
+        // If answerText is empty or looks like a filename, create a proper summary
+        // Format: "breast cancer, covering its epidemiology, risk factors..."
+        answerText = `This document provides comprehensive information about ${query}, covering its key aspects, details, and relevant information. It is intended for internal use and includes detailed information on the topic.`;
+      }
+
+      // ABSOLUTE FINAL CHECK: answerText must never be empty or just a filename
+      if (!answerText || answerText.trim().length === 0 || /^[A-Za-z0-9_.-]+$/.test(answerText.trim())) {
+        // Create summary in requested format
+        answerText = `This document provides comprehensive information about ${query}, covering its key aspects, details, and relevant information. It is intended for internal use and includes detailed information on the topic.`;
+      }
+
+      // Ensure answerText ends with a period
+      if (answerText && !answerText.trim().endsWith('.')) {
+        answerText = answerText.trim() + '.';
+      }
+
+      // Log what we're returning for debugging
+      console.log('=== RETURNING FROM performSemanticSearchOnKMArtifacts ===');
+      console.log('Return values:', {
+        answerTextLength: answerText.length,
+        answerTextPreview: answerText.substring(0, 200),
+        answerTextLooksLikeFilename: /^[A-Za-z0-9_.-]+$/.test(answerText.trim()),
+        documentLinksLength: documentLinks.length,
+        documentLinksValue: documentLinks,
+        documentLinksPreview: documentLinks.substring(0, 300),
+        documentLinksHasMarkdown: documentLinks.includes('[') && documentLinks.includes(']('),
+        documentLinksMarkdownCount: (documentLinks.match(/\[.*?\]\(.*?\)/g) || []).length,
+        topDocAbstract: abstract,
+        topDocDescription: topDoc.description,
+        topDocFileName: topDoc.fileName,
+        topDocTitle: topDoc.title,
+        topDocFileRef: topDoc.fileRef,
+        topDocServerRelativeUrl: topDoc.serverRelativeUrl,
+        finalFilteredResultsCount: finalFilteredResults.length,
+        hasTopResult: !!topResult,
+        topResultSimilarity: topResult?.similarity
+      });
+
+      // CRITICAL DEBUG: If documentLinks is empty but we have results, log why
+      if (documentLinks.length === 0 && finalFilteredResults.length > 0) {
+        console.error('🚨🚨🚨 CRITICAL: documentLinks is EMPTY but we have filtered results! 🚨🚨🚨');
+        console.error('Top document details:', {
+          fileName: topDoc.fileName,
+          title: topDoc.title,
+          fileRef: topDoc.fileRef,
+          serverRelativeUrl: topDoc.serverRelativeUrl,
+          fileType: topDoc.fileType,
+          allKeys: Object.keys(topDoc),
+          hasFileRef: !!topDoc.fileRef,
+          hasServerRelativeUrl: !!topDoc.serverRelativeUrl,
+          hasFileName: !!topDoc.fileName
+        });
+        console.error('Web URL:', webUrl);
+        console.error('Server root:', serverRoot);
+        console.error('Site relative path:', props.context?.pageContext.web.serverRelativeUrl);
+      }
+
+      // CRITICAL: Ensure documentLinks is not empty if we have results
+      if (finalFilteredResults.length > 0 && documentLinks.length === 0) {
+        console.error('❌❌❌ ERROR: We have filtered results but documentLinks is empty! ❌❌❌');
+        console.error('This should not happen. Attempting to generate link from top result...');
+        console.error('Top result details:', {
+          hasDocument: !!finalFilteredResults[0]?.document,
+          documentKeys: finalFilteredResults[0]?.document ? Object.keys(finalFilteredResults[0].document) : [],
+          fileName: finalFilteredResults[0]?.document?.fileName,
+          fileRef: finalFilteredResults[0]?.document?.fileRef,
+          serverRelativeUrl: finalFilteredResults[0]?.document?.serverRelativeUrl,
+          title: finalFilteredResults[0]?.document?.title
+        });
+
+        // Try to generate at least one link from the top result
+        const topResult = finalFilteredResults[0];
+        const topDocForLink = topResult.document;
+        if (topDocForLink) {
+          // Try multiple approaches to get the URL
+          let serverRelativeUrl = topDocForLink.fileRef || topDocForLink.serverRelativeUrl || '';
+
+          // If still no URL, construct from fileName (MOST RELIABLE)
+          if (!serverRelativeUrl && topDocForLink.fileName) {
+            const siteRelativePath = props.context?.pageContext.web.serverRelativeUrl || '';
+            serverRelativeUrl = `${siteRelativePath}/${LIBRARY_NAMES.kmDataHub}/${topDocForLink.fileName}`;
+            console.log('🔧 Emergency: Constructed URL from fileName:', serverRelativeUrl);
+          }
+
+          if (serverRelativeUrl) {
+            // Normalize URL
+            if (!serverRelativeUrl.startsWith('/')) {
+              serverRelativeUrl = `/${serverRelativeUrl}`;
+            }
+            serverRelativeUrl = serverRelativeUrl.replace(/([^:]\/)\/+/g, '$1');
+
+            const fileExtension = (topDocForLink.fileType || topDocForLink.fileName?.split('.').pop() || '').toLowerCase();
+            let docUrl = '';
+
+            try {
+              if (['docx', 'doc', 'pptx', 'ppt', 'xlsx', 'xls', 'xlsm', 'xlsb', 'xltx', 'xltm'].includes(fileExtension)) {
+                const encodedServerUrl = encodeURIComponent(serverRelativeUrl);
+                docUrl = `${webUrl}/_layouts/15/WopiFrame.aspx?sourcedoc=${encodedServerUrl}&action=default`;
+              } else {
+                docUrl = `${serverRoot}${serverRelativeUrl}`;
+              }
+
+              // Validate URL and reconstruct to ensure proper formatting
+              const urlObj = new URL(docUrl);
+              docUrl = urlObj.toString();
+
+              // Use Title if available and not empty, and not a placeholder, otherwise use fileName
+              const displayTitle = (topDocForLink.title && topDocForLink.title.trim() !== '' && !isPlaceholderTitle(topDocForLink.title))
+                ? topDocForLink.title
+                : (topDocForLink.fileName || 'Document');
+
+              // Use helper function to clean title
+              let cleanTitle = cleanDocumentTitle(displayTitle, topDocForLink.fileName);
+
+              // Get abstract/description for emergency link
+              const emergencyAbstract = topDocForLink.description || topDocForLink.abstract || '';
+              let emergencyAbstractText = '';
+              if (emergencyAbstract && emergencyAbstract.trim() !== '' && emergencyAbstract !== '-') {
+                // Format as conclusive statement - ensure it ends with a period
+                let formattedAbstract = emergencyAbstract.trim();
+                if (!formattedAbstract.endsWith('.') && !formattedAbstract.endsWith('!') && !formattedAbstract.endsWith('?')) {
+                  formattedAbstract += '.';
+                }
+                emergencyAbstractText = `\n\n${formattedAbstract}`;
+              }
+
+              documentLinks = `\n\n**[${cleanTitle}](${docUrl})**${emergencyAbstractText}`;
+              console.log('✅ Generated emergency document link with abstract:', documentLinks.substring(0, 200));
+            } catch (urlError) {
+              console.error('❌ Failed to generate emergency URL:', urlError);
+              console.error('URL details:', { serverRelativeUrl, docUrl, fileExtension, webUrl, serverRoot });
+            }
+          } else {
+            console.error('❌ Cannot generate emergency link - no fileName, fileRef, or serverRelativeUrl available');
+            console.error('Document structure:', topDocForLink);
+          }
+        } else {
+          console.error('❌ Top result has no document object');
+        }
+      }
+
+      // Helper function to map to DocumentItem interface
+      const mapToDocumentItem = (doc: any): DocumentItem => {
+        const fileName = doc.fileName || doc.FileLeafRef || '';
+        const id = doc.id || doc.Id || 0;
+
+        // Construct serverRelativeUrl correctly
+        let serverUrl = doc.serverRelativeUrl || doc.FileRef || doc.fileRef || '';
+        if (!serverUrl && doc.fileName) {
+          const siteRelativePath = props.context?.pageContext.web.serverRelativeUrl || '';
+          serverUrl = `${siteRelativePath}/${LIBRARY_NAMES.kmDataHub}/${doc.fileName}`;
+        }
+
+        return {
+          id: id,
+          name: doc.title && !isPlaceholderTitle(doc.title) ? doc.title : (doc.fileName || 'Document'),
+          abstract: doc.description || doc.abstract || doc.Abstract || '',
+          fileType: (doc.fileType || fileName.split('.').pop() || 'FILE').toUpperCase(),
+          author: doc.author || 'Internal',
+          date: doc.date || (doc.TimeStamp ? new Date(doc.TimeStamp).toLocaleDateString() : ''),
+          fileSize: doc.fileSize || '',
+          serverRelativeUrl: serverUrl,
+          fileRef: doc.fileRef || doc.FileRef || serverUrl,
+          tags: doc.tags || []
+        };
+      };
+
+    } catch (error) {
+      console.error('Error in performSemanticSearchOnKMArtifacts:', error);
+      return { answerText: 'An error occurred during search.', documentLinks: '', documents: [] };
+    }
+
+  };

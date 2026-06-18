@@ -1,0 +1,221 @@
+this is the site URL : https://skysecuretech.sharepoint.com/sites/InSkytes/SitePages/CollabHome.aspx?market=en-US
+Document metrics : https://skysecuretech.sharepoint.com/sites/InSkytes/Lists/DocumentMetrics/AllItems.aspx
+User Interactions : https://skysecuretech.sharepoint.com/sites/InSkytes/Lists/UserInteractions/AllItems.aspx
+Audit log : https://skysecuretech.sharepoint.com/sites/InSkytes/Lists/Audit%20Log/AllItems.aspx
+Document comments : https://skysecuretech.sharepoint.com/sites/InSkytes/Lists/DocumentComments/AllItems.aspx
+DocumentReviewFlags : https://skysecuretech.sharepoint.com/sites/InSkytes/Lists/DocumentReviewFlags/AllItems.aspx
+KM Harvest Hub : https://skysecuretech.sharepoint.com/sites/InSkytes/Lists/KM%20Harvest%20Hub/AllItems.aspx
+
+Therapy Area f213c083-a349-4be0-8db1-a6544f41b4c8
+  ENT fcc11692-4122-4473-abfb-6aa0c99584aa
+  Hepatology 4e1f9b12-bd19-4a62-aa44-fe98a76efd4e
+  Neurology 2c0cab7a-01e1-4cd4-8704-5318acd52a14
+  Solid Tumors 8204fd83-5634-4ebd-a356-2037557cea36
+  Respiratory 43570ca0-f619-4662-b4a3-ae93e255f8fc
+  Endocrinology b5744cc1-341b-4fa2-989f-4f4765203a5f
+  Oncology 5670a74d-9a6a-4c78-bd25-efb35b3dab3e 
+  Opthalmology 7c23ca6e-8c3e-4098-8475-a44bd94b740d
+  CVD edcbcaa9-a17d-4118-97c6-6c6a727e7f9a
+  Cross-Therapy 08eb9d01-e22b-40b1-8867-15371f2d6555
+
+Geography 3a16d60d-5af6-44aa-a47d-0834e971a12e
+   APAC c46eeec9-210c-482e-8b25-17540c50c662
+   Australia 34d750c8-1729-406e-a143-0d7e478ec92a
+   Europe 4fa4f696-e904-45e0-9c12-fec513b00e2b
+   General d1c93500-af2c-4606-a5f5-c3a8c005f4a8
+   UK 15d6dfde-9a78-415b-aadf-b87f6bfbd9de
+   US 9b1faffb-fe4c-4b23-bb58-edb1a1fb2029
+   EUCAN c914d2ad-f5cf-4e47-ad89-42373c710a1a
+   Global dc860fc1-c4d1-42df-82d1-12dd23001e78
+
+Document Type f638dc73-d5d6-49ee-8a8f-59ff6b59ae66
+  About  faca391e-13ad-4196-8036-736236773a58
+  Abstract a8b9b7ff-f911-4059-a2e8-c6dda0da6e80
+  Agreement fb54385d-9a33-426e-a80c-7733119b2dd1
+  Article 3cec94e3-6869-4ccd-bc99-4837bd7ce891
+  Banner 22ba6db2-4c06-46c0-8708-1d0346eb2d12
+  Battle Card f3697713-5322-467f-a1eb-5d6aa3f678a8
+  Case Study 2e06b7cb-c833-48fa-b639-5298594e8426
+  Communication 078ebaf8-ac40-4f47-8899-70ccc76d56ce
+  Demo 6a81a9ad-66b5-49a8-a2b7-9b3570edb5b4
+  Code of Conduct 0e17bbe7-14bd-4651-a01f-547901ac3168
+
+Disease Area 98942a12-8bd1-450c-8f64-e7e0ec55e75c
+  Brain Cancers e5942b4c-fc43-44e9-b679-58c4a987a472
+  Breast Cancer c13711ca-c554-4fbf-9ddb-065754760345
+  Diabetes 3f005f4e-9134-4090-8487-12818899515c
+  Coronavirus 030c722b-14d5-4a26-9817-d328d84695b8
+  Dry eye disease 00f273d5-e42a-4bf9-acd2-b368a0ec05a6
+  Hematology 73d794ed-4ac1-44c1-bd4b-cb2e88053166
+  Lung Cancer efd90502-0587-4fe4-8bed-116374e8a7c8
+  Prostate Cancer 9e8ea528-fb6d-41c0-9c15-9884e3936421
+  Ovarian Cancer 9e8c65aa-5cd6-4bc7-a4ad-17979c796c94
+  Gastric Cancer a88eab0b-72eb-4086-9d25-e1060db5d2a7
+
+Client f205a202-e08c-4424-b39f-34e1ccddc708
+  Abbott c8f0e29a-da68-43e9-a5f6-c7eeb8f18b73
+  Alcon b4be21bb-82dd-4903-a6c2-5d26b32dac43
+  Alexion d6fc98c5-f7a5-4cfc-b9d6-5e38892bd72e
+  Bayer e47ada55-6f8c-4f3b-85ce-6475a6b2863e
+  Biocon e0cd0f40-70b4-484c-b3b7-d43c4cd40e9d
+  Biogen 9c66a673-c49f-428c-adc3-855c06b7d4c4
+  Cipla 71fc69e9-1ca5-4dd5-b029-8667def732cd
+  CSL ab2259b7-1eeb-427e-88b1-dc0f37684d5c
+  Eli Lilly 5ca67017-e6d1-489f-8142-b700dcc26674
+  Takeda baa30e6f-1b9d-4d84-8718-494833021791
+
+
+BU / Department 2cc9b6f4-ba29-438c-9f4a-877418912b85
+   All 7b7b7e72-9fd8-466b-b310-251172085b19
+   Amgen C 360 5ca5fc99-6ec9-447b-9caa-0f6e99d616f8
+   Enterprise Medical 7a2cafe9-be18-4c4d-8095-bd39d1f7f828
+              Enterprise Medical Platforms and Technology 302590e9-a5ac-4936-a97b-e0c14c0eeefd
+   Global Safety 49913bed-60f9-4a25-8046-a12aed030d8c
+           Safety d25efab8-9283-4f07-8957-dfde8177de04
+           Pharmacovigilance 4d3aa880-e368-4da8-90fc-1356b42f535f
+
+  PRMA & HEOR f935ff3c-64d2-4786-a3d8-a91a9edd3bca
+  Marketing 7d6b3a17-f70b-478a-8368-04834140ed60
+  People Practices & Systems 789d8549-dbff-43fa-824f-f5f5f901f24d
+  Strategy and Development 347a55db-8d70-48d4-8b1e-4ab61a0cc9de
+  Sales Lifesciences f14a7f85-098d-41a5-b9ba-0e226e82540c
+  Commercial Technology Group 80d031e9-f1db-41f4-84ee-ce226ef69ad9 
+            Commercial Excellence 293ec4e8-245e-405b-ae9a-9c7dc4419d5c
+		Platforms caddb26e-9283-4f19-a6b7-fc60887cc86f
+  DAAI and Tech Solutions 309ee041-4195-43cf-a858-1f4e494a3037
+           Technical Solutions 242269de-0202-4e8e-a779-ab2e0c8ffd44 
+	   CDP, Tagging ＆ Taxonomy 394dd65c-4eea-423b-bfe7-2e7a314c4100
+
+KM Harvest Hub document library :
+Title Title
+Period Period
+Project Name ProjectName
+Project Id ProjectId 
+BU BU
+Master_id Master_id 
+Project Status ProjectStatus
+Contract Value ContractValue 
+Instance Instance
+Asset Type AssetType
+Brand Brand
+Region Region
+Engagement Engagement 
+Revenue Type RevenueType
+Created On CreatedOn
+Project Billable ProjectBillable
+Project StartDate ProjectStartDate
+Project EndDate ProjectEndDate
+Revenue Rec RevenueRec 
+Harvesting Status HarvestingStatus
+Count of Documents CountofDocuments
+Initial Email InitialEmail
+First Reminder FirstReminder
+Final Reminder FinalReminder
+PM Email ID PMEmailID 
+KM SPOC KMSPOC
+KM Email ID KMEmailID
+SL Head SLHead
+BU Head BUHead
+Modified Modified
+Created Created
+Created By Author
+Modified By Editor
+
+
+
+
+KM Review Hub  docuemnt library 
+Author Author0
+Bookmark Bookmark
+BU BU
+Client Client
+Comments Comments
+Content Refresh Date ContentRefreshDate
+Created Created
+Department / Sub Department Department_x0020__x002f__x0020_Sub_x0020_Department
+Description _ExtendedDescription
+Disease Area Disease_x0020_Area 
+Document Type Document_x0020_Type
+Downloads Downloads
+Edited Edited
+Editor Editor0
+Follow Follow
+Geography Geography
+Likes Likes
+Modified Modified
+Project Id ProjectId
+Published  Published
+Reviewer Comments ReviewerComments
+Sensitive Terms SensitiveTerms
+Share Share
+Status Status
+Therapy Area Therapy_x0020_Area
+Title Title
+URL URL
+VersionFileName VersionFileName
+VersionFileType VersionFileType
+Views Views
+Created By Author
+Modified By Editor
+Checked Out To CheckoutUser
+ km review hub library url : https://skysecuretech.sharepoint.com/sites/InSkytes/KM%20Review%20Hub/Forms/AllItems.aspx
+ km harvest hub URL : https://skysecuretech.sharepoint.com/sites/InSkytes/Lists/KM%20Harvest%20Hub/AllItems.aspx
+
+
+
+
+ Site Information
+Site URL
+https://skysecuretech.sharepoint.com/sites/InSkytes
+
+Site/Web ID
+9d3cf7ea-0b61-4ad9-8780-433625ec6a6f
+
+Library/List GUIDs
+KM Review Hub
+6c9e04e6-f646-4f5b-a610-94e2eeb07998
+
+KM Harvest Hub
+90f2a0f9-85db-4a16-94dc-5bd94bd34cee
+
+DocumentMetrics
+3b829fad-27a2-4e09-ac9c-4009096a1b4f
+
+UserInteractions
+73d35d04-7367-4d88-8a7a-b578bf1a573f
+
+Audit Log
+cb2e6f43-7e54-4e08-b149-bf97d21fbf5d
+
+DocumentComments
+188171e3-5da5-44fe-aaf7-5c673b1084d8
+
+DocumentReviewFlags
+f5e64a1b-5e88-41be-82be-309934c0c31b
+
+HomePageConfig
+41c93959-14c3-4f95-9126-1f6ac39df257
+
+Site Pages
+3be0eb5c-4b89-4856-b7b1-49668191e3ce
+Site Pages
+Home.aspx
+Search.aspx
+Bookmark.aspx
+Categories.aspx
+Assets.aspx
+MyDocuments.aspx
+Analytics.aspx
+Audit-Log.aspx
+KM-Review-Hub.aspx
+KM-Harvest-Hub.aspx
+KM-Library.aspx
+Business-Units.aspx
+
+
+
+ull Graph Site ID
+
+✅ Available
+
+skysecuretech.sharepoint.com,9d3cf7ea-0b61-4ad9-8780-433625ec6a6f,900862b0-5891-47d9-9ac2-83afc691e3c8

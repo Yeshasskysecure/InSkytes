@@ -1,0 +1,242 @@
+@import '../../styles/ikDesignTokens';
+.myDocuments {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #f8fafc;
+  font-family: 'Inter', sans-serif;
+}
+
+/* ── Header ─────────────────────────────────────────── */
+.pageHeader {
+  padding: 20px 24px 14px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #ffffff;
+  flex-shrink: 0;
+}
+
+.pageTitle {
+  @include ik-page-hero-title;
+  margin: 0 0 4px;
+  color: #0f172a;
+}
+
+.pageSubtitle {
+  @include ik-body-text;
+  margin: 0;
+  color: #64748b;
+}
+
+/* ── Content Area ────────────────────────────────────── */
+.content {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+/* ── States ──────────────────────────────────────────── */
+.loading,
+.emptyState {
+  @include ik-card-heading;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  gap: 12px;
+  color: #64748b;
+}
+
+.emptyIcon {
+  font-size: 48px;
+  opacity: 0.5;
+}
+
+.emptyTitle {
+  @include ik-section-title;
+  margin: 0;
+  color: #334155;
+}
+
+.emptyMessage {
+  @include ik-body-text;
+  margin: 0;
+  color: #94a3b8;
+  text-align: center;
+  max-width: 320px;
+}
+
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #4f46e5;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Stats Bar ───────────────────────────────────────── */
+.statsBar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.statsCount {
+  @include ik-body-text;
+  color: #64748b;
+}
+
+/* ── Document Grid ───────────────────────────────────── */
+.documentsList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.documentCard {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.documentCard:hover {
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+  border-color: #c7d2fe;
+}
+
+/* ── File icon badge ─────────────────────────────────── */
+.fileIconBadge {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  background: #f1f5f9;
+  gap: 2px;
+}
+
+.fileTypeLabel {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+/* ── Doc Info ────────────────────────────────────────── */
+.docInfo {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.docTitle {
+  @include ik-card-heading;
+  margin: 0 0 4px;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.docMeta {
+  @include ik-body-text;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  color: #94a3b8;
+  margin-bottom: 8px;
+}
+
+.docMetaItem {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.statusBadge {
+  @include ik-body-text;
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 999px;
+}
+
+.statusUnpublished {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.statusPublished {
+  background: #d1fae5;
+  color: #059669;
+}
+
+.statusDraft {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.docAbstract {
+  @include ik-body-text;
+  margin: 0;
+  color: #64748b;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ── Actions ─────────────────────────────────────────── */
+.docActions {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.actionBtn {
+  @include ik-button-text;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: none;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.viewBtn {
+  background: #ede9fe;
+  color: #6d28d9;
+}
+
+.viewBtn:hover {
+  background: #ddd6fe;
+}
+
+.downloadBtn {
+  background: #f1f5f9;
+  color: #475569;
+  padding: 7px 10px;
+}
+
+.downloadBtn:hover {
+  background: #e2e8f0;
+}

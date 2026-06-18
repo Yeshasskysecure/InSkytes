@@ -1,0 +1,480 @@
+.pdfViewer {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  background: #f6f7f9;
+  border: 1px solid #cfd6df;
+  border-radius: 14px;
+  box-shadow: 0 0 0 1px rgba(207, 214, 223, 0.72), 0 10px 24px rgba(15, 23, 42, 0.08);
+  box-sizing: border-box;
+}
+
+.pdfViewerFullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: #f8fbff;
+}
+
+.toolbarShell {
+  flex: 0 0 auto;
+  background: #ffffff;
+  border-bottom: 1px solid #cfd6df;
+  overflow: hidden;
+  box-shadow: 0 2px 5px rgba(15, 23, 42, 0.10);
+}
+
+.toolbarLayout {
+  display: grid;
+  grid-template-columns: minmax(92px, 1fr) auto minmax(92px, 1fr);
+  align-items: center;
+  min-height: 44px;
+  padding: 3px 10px;
+  column-gap: 4px;
+}
+
+.toolbarCommandBar {
+  background: transparent;
+  padding: 0;
+  min-width: 0;
+  height: auto;
+}
+
+.toolbarCommandBar:first-child {
+  justify-self: start;
+}
+
+.toolbarCommandBar:nth-child(2) {
+  justify-self: center;
+}
+
+.toolbarCommandBar:last-child {
+  justify-self: end;
+}
+
+.toolbarShell :global(.ms-CommandBar) {
+  background: transparent;
+  padding: 0;
+  height: auto;
+}
+
+.toolbarShell :global(.ms-CommandBar-primaryCommand) {
+  background: transparent;
+  gap: 4px;
+}
+
+.toolbarShell :global(.ms-OverflowSet-item) {
+  display: flex;
+  align-items: center;
+}
+
+.toolbarShell :global(.ms-CommandBarItem-link) {
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: #334155;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+
+.toolbarShell :global(.ms-CommandBarItem-link:hover) {
+  background: #f3f6f9;
+  border-color: #d8dee6;
+  color: #0f172a;
+  box-shadow: none;
+  outline: none;
+}
+
+.toolbarShell :global(.ms-CommandBarItem-link:hover .ms-CommandBarItem-icon),
+.toolbarShell :global(.ms-CommandBarItem-link:hover .ms-Icon) {
+  color: #0f172a;
+}
+
+.toolbarShell :global(.ms-CommandBarItem-link:focus) {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  outline: none;
+}
+
+.toolbarShell :global(.ms-CommandBarItem-link:focus-visible) {
+  background: #f3f6f9;
+  border-color: #c8d1dc;
+  color: #0f172a;
+  box-shadow: none;
+  outline: none;
+}
+
+.toolbarShell :global(.ms-CommandBarItem-link:hover:focus),
+.toolbarShell :global(.ms-CommandBarItem-link:hover:focus-visible) {
+  background: #f3f6f9;
+  border-color: #d8dee6;
+  color: #0f172a;
+  box-shadow: none;
+  outline: none;
+}
+
+.toolbarShell :global(.ms-CommandBarItem-link.is-checked),
+.toolbarShell :global(.ms-CommandBarItem-link[aria-pressed="true"]) {
+  background: #edf2f7;
+  border-color: #c8d1dc;
+  color: #0f172a;
+}
+
+.toolbarShell :global(.ms-CommandBarItem-link.is-checked .ms-CommandBarItem-icon),
+.toolbarShell :global(.ms-CommandBarItem-link.is-checked .ms-Icon),
+.toolbarShell :global(.ms-CommandBarItem-link[aria-pressed="true"] .ms-CommandBarItem-icon),
+.toolbarShell :global(.ms-CommandBarItem-link[aria-pressed="true"] .ms-Icon) {
+  color: #0f172a;
+}
+
+.toolbarShell :global(.ms-CommandBarItem-link:disabled),
+.toolbarShell :global(.ms-CommandBarItem-link[disabled]) {
+  background: transparent;
+  border-color: transparent;
+  color: #bdc1c6;
+  cursor: not-allowed;
+}
+
+.toolbarShell :global(.ms-CommandBarItem-icon) {
+  margin: 0;
+  color: currentColor;
+  font-size: 14px;
+  line-height: 14px;
+  width: 14px;
+  height: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.toolbarShell :global(.ms-CommandBarItem-icon .ms-Icon),
+.toolbarShell :global(.ms-Icon) {
+  color: currentColor;
+  font-size: 14px;
+  line-height: 1;
+  color: inherit;
+}
+
+.toolbarZoomValue {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  min-height: 26px;
+  min-width: 56px;
+  padding: 0 8px;
+  border: 1px solid #cfd6df;
+  border-radius: 4px;
+  background: #ffffff;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: #263445;
+  white-space: nowrap;
+  box-shadow: 0 2px 5px rgba(15, 23, 42, 0.10);
+}
+
+.toolbarZoomInput {
+  width: 30px;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: inherit;
+  text-align: center;
+}
+
+.toolbarPageCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 26px;
+  min-width: 72px;
+  padding: 0 10px;
+  border: 1px solid #cfd6df;
+  border-radius: 4px;
+  background: #ffffff;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: #263445;
+  white-space: nowrap;
+  box-shadow: 0 2px 5px rgba(15, 23, 42, 0.10);
+}
+
+.toolbarGroupSpacer {
+  width: 1px;
+  min-width: 1px;
+  height: 18px;
+  margin: 0 6px;
+  background: #cfd6df;
+  display: inline-block;
+}
+
+.viewerBody {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.documentRoot {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.documentRoot > .stateMessage {
+  flex: 1 1 auto;
+  align-self: stretch;
+}
+
+.thumbnailPanel {
+  flex: 0 0 200px;
+  width: 200px;
+  min-width: 200px;
+  padding: 12px 8px;
+  border-right: 1px solid #cfd6df;
+  background: #f7f8fa;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #8f8f8f transparent;
+
+  &::-webkit-scrollbar {
+    width: 3px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #8f8f8f;
+    border-radius: 4px;
+  }
+}
+
+.thumbnailPanelHeader {
+  margin: 0 0 10px 4px;
+  color: #94a3b8;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.thumbnailList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.thumbnailButton {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  padding: 6px;
+  border: 1.5px solid #dde3ea;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #64748b;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.12s ease;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+
+.thumbnailButton:hover {
+  background: #eef2f6;
+  border-color: #c4ccd6;
+  color: #0f172a;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+}
+
+.thumbnailButtonActive {
+  background: #ffffff;
+  border-color: #7c8da3;
+  color: #1e293b;
+  box-shadow: 0 0 0 2px rgba(124, 141, 163, 0.14), 0 4px 10px rgba(15, 23, 42, 0.08);
+}
+
+.thumbnailPreview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 142px;
+  overflow: hidden;
+  border-radius: 6px;
+  background: #f3f4f6;
+}
+
+.thumbnailPlaceholder {
+  display: block;
+  width: 126px;
+  height: 142px;
+  border-radius: 4px;
+  background: linear-gradient(180deg, #ffffff 0%, #eef4fb 100%);
+}
+
+.thumbnailLabel {
+  font-size: 10px;
+  font-weight: 500;
+  color: inherit;
+  text-align: center;
+  width: 100%;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  letter-spacing: 0.02em;
+}
+
+.mainPanel {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  padding: 18px;
+  background: #e7ebf0;
+  scrollbar-width: thin;
+  scrollbar-color: #8f8f8f transparent;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: #8f8f8f;
+    border-radius: 3px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+.pageCanvasShell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  justify-content: flex-start;
+  min-width: max-content;
+}
+
+.pageShell {
+  flex: 0 0 auto;
+  background: #ffffff;
+  box-shadow: 0 16px 38px rgba(17, 24, 39, 0.16), 0 0 0 1px rgba(229, 231, 235, 0.9);
+  cursor: pointer;
+  outline: none;
+  overflow: hidden;
+}
+
+.pageShell:focus-visible {
+  box-shadow: 0 16px 38px rgba(29, 53, 87, 0.16), 0 0 0 3px rgba(47, 111, 219, 0.28);
+}
+
+.stateMessage {
+  flex: 1 1 auto;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  padding: 24px;
+  color: #64748b;
+  font-size: 14px;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.documentLoadingState {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: #f8fbff;
+}
+
+.pagePlaceholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 100%;
+  padding: 24px;
+  box-sizing: border-box;
+  background: linear-gradient(180deg, #ffffff 0%, #f4f8fd 100%);
+  color: #64748b;
+  font-size: 14px;
+  text-align: center;
+}
+
+.imageCanvasShell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  min-width: 100%;
+  min-height: 100%;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+.imageSurface {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+}
+
+.imagePreview {
+  flex: 0 0 auto;
+  display: block;
+  max-width: none;
+  max-height: none;
+  object-fit: contain;
+  transform-origin: center center;
+  transition: transform 0.16s ease;
+}
+
+@media (max-width: 768px) {
+  .viewerBody {
+    position: relative;
+  }
+
+  .thumbnailPanel {
+    position: absolute;
+    inset: 0 auto 0 0;
+    z-index: 5;
+    width: min(82vw, 260px);
+    min-width: min(82vw, 260px);
+    box-shadow: 16px 0 30px rgba(15, 23, 42, 0.16);
+  }
+
+  .mainPanel {
+    padding: 12px;
+  }
+}

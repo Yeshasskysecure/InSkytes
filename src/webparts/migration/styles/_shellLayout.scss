@@ -1,0 +1,67 @@
+@import '../styles/ikDesignTokens';
+$shell-header-min-height-desktop: 248px;
+$shell-header-min-height-tablet: 208px;
+$shell-header-min-height-mobile: 168px;
+
+$shell-middle-min-height-desktop: 372px;
+$shell-middle-min-height-tablet: 332px;
+$shell-middle-min-height-mobile: 272px;
+
+$shell-tab-min-height-desktop: 70px;
+$shell-tab-min-height-mobile: 48px;
+
+@mixin shell-header-frame {
+  width: 100%;
+  max-width: 100%;
+  min-height: $shell-header-min-height-desktop;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+@mixin shell-header-frame-tablet {
+  min-height: $shell-header-min-height-tablet;
+}
+
+@mixin shell-header-frame-mobile {
+  min-height: $shell-header-min-height-mobile;
+}
+
+@mixin shell-middle-frame {
+  width: 100%;
+  max-width: 100%;
+  min-height: $shell-middle-min-height-desktop;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+@mixin shell-middle-frame-tablet {
+  min-height: $shell-middle-min-height-tablet;
+}
+
+@mixin shell-middle-frame-mobile {
+  min-height: $shell-middle-min-height-mobile;
+}
+
+@mixin shell-tab-frame {
+  min-height: $shell-tab-min-height-desktop;
+}
+
+@mixin shell-tab-frame-mobile {
+  min-height: $shell-tab-min-height-mobile;
+}
+
+@mixin shell-footer-band {
+  width: 100%;
+  max-width: 100%;
+  min-height: $shell-header-min-height-desktop;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+@mixin shell-footer-band-tablet {
+  min-height: $shell-header-min-height-tablet;
+}
+
+@mixin shell-footer-band-mobile {
+  min-height: $shell-header-min-height-mobile;
+}

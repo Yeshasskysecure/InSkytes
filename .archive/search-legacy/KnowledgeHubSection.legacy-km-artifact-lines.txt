@@ -1,0 +1,31 @@
+2810:    // We're using semantic search on local KMArtifacts documents instead
+3359:      const libraryName = 'KMArtifacts';
+3364:      console.log('Expected Library URL:', `${webUrl}/KMArtifacts`);
+3375:      console.log('Note: This will work if KMArtifacts library exists on the current site');
+3426:        // FileRef contains the full server-relative path like: /sites/MigrationTest2/KMArtifacts/filename.pdf
+3438:          serverRelativeUrl = `${siteRelativePath}/KMArtifacts/${fileName}`;
+3573:  // Fetch all documents from KMArtifacts and format them as clickable links
+3581:      const libraryName = 'KMArtifacts';
+3602:        return "No published documents found in the KMArtifacts library.";
+3609:      let linksText = `Here are all the documents from the KMArtifacts library (${items.length} documents):\n\n`;
+3627:          serverRelativeUrl = `${siteRelativePath}/KMArtifacts/${fileName}`;
+3824:  // Perform semantic search on KMArtifacts and return formatted results with answer text
+3825:  const performSemanticSearchOnKMArtifacts = async (query: string): Promise<{ answerText: string; documentLinks: string }> => {
+3832:      const libraryName = 'KMArtifacts';
+3886:          serverRelativeUrl = `${siteRelativePath}/KMArtifacts/${fileName}`;
+4363:        serverRelativeUrl = `${siteRelativePath}/KMArtifacts/${cleanFileName}`;
+4376:            serverRelativeUrl = `${siteRelativePath}/KMArtifacts/${topDoc.fileName}`;
+4507:        const fallbackUrl = `${siteRelativePath}/KMArtifacts/${topDoc.fileName}`;
+4576:            docServerUrl = `${siteRelativePath}/KMArtifacts/${doc.fileName}`;
+4666:      console.log('=== RETURNING FROM performSemanticSearchOnKMArtifacts ===');
+4729:            serverRelativeUrl = `${siteRelativePath}/KMArtifacts/${topDocForLink.fileName}`;
+4892:      const libraryName = 'KMArtifacts';
+5070:          // e.g., /sites/MigrationTest2/KMArtifacts/file.svg
+5078:            serverRelativeUrl = `${cleanSitePath}/KMArtifacts/${matchingDoc.FileLeafRef}`;
+5088:          // serverRelativeUrl: /sites/MigrationTest2/KMArtifacts/file.svg
+5089:          // We need: https://indegenedevelopment.sharepoint.com/sites/KnowledgeHub/KMArtifacts/file.svg
+5227:      // Check for "all documents" queries - fetch all documents from KMArtifacts
+5348:      // STEP 2: Perform semantic search on KMArtifacts documents (only if not out of domain)
+5356:        semanticSearchResult = await performSemanticSearchOnKMArtifacts(query);
+5415:              const libraryName = 'KMArtifacts';
+5447:                        serverRelativeUrl = `${siteRelativePath}/KMArtifacts/${doc.FileLeafRef}`;

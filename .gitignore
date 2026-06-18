@@ -1,0 +1,44 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Dependency directories
+node_modules
+
+# Build generated files
+dist
+lib
+release
+solution
+temp
+*.sppkg
+.heft
+
+# Coverage directory used by tools like istanbul
+coverage
+
+# OSX
+.DS_Store
+
+# Visual Studio files
+.ntvs_analysis.dat
+.vs
+bin
+obj
+
+# Resx Generated Code
+*.resx.ts
+
+# Styles Generated Code
+*.scss.ts
+
+config/.env
+config/*.env
+!config/*.env.example
+CODEX_SEARCH_FINAL_PROMPT.md
+tools/search-backend/.inventory/
+knowledge_base/
+real test/
+chat_bot_testing.txt
+tools/search-backend/evals/post-backfill-*.json
