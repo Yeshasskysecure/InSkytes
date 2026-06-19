@@ -9,7 +9,7 @@ export interface SearchEnvironment {
   sharePointSiteId: string;
   sharePointLibraryListId: string;
   sharePointLibraryDriveId: string;
-  sharePointWhosWhoListId: string;
+  sharePointWhosWhoListId?: string;
   azureSearchEndpoint: string;
   azureSearchApiVersion: string;
   azureSearchAdminKey: string;
@@ -46,7 +46,6 @@ export const requiredEnvironmentKeys = [
   'SHAREPOINT_SITE_ID',
   'SHAREPOINT_LIBRARY_LIST_ID',
   'SHAREPOINT_LIBRARY_DRIVE_ID',
-  'SHAREPOINT_WHOSWHO_LIST_ID',
   'AZURE_SEARCH_ENDPOINT',
   'AZURE_SEARCH_API_VERSION',
   'AZURE_SEARCH_ADMIN_KEY',

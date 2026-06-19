@@ -56,10 +56,9 @@ if ($LASTEXITCODE -eq 0) {
     Write-Host "Next steps:" -ForegroundColor Cyan
     Write-Host "1. Build the solution: npm run build" -ForegroundColor White
     Write-Host "2. Serve locally: gulp serve" -ForegroundColor White
-    Write-Host "3. Open the workbench at: https://indegenedevelopment.sharepoint.com/sites/KnowledgeHub/_layouts/workbench.aspx" -ForegroundColor White
+    Write-Host "3. Open the workbench at: https://skysecuretech.sharepoint.com/sites/InSkytes/_layouts/15/workbench.aspx?debug=true&noredir=true&reset=true&ikBackend=prod&debugManifestsFile=https%3A%2F%2Flocalhost%3A4321%2Ftemp%2Fbuild%2Fmanifests.js" -ForegroundColor White
 } else {
     Write-Host ""
     Write-Host "Setup failed. Please check the error messages above." -ForegroundColor Red
     exit 1
 }
-

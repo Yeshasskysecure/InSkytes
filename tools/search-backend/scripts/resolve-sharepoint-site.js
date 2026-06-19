@@ -21,8 +21,8 @@ const pickDriveForList = (drives, list) => {
 
 const run = async () => {
   const envPath = process.argv[2] || 'config/search.env';
-  const hostname = process.argv[3] || 'indegenedevelopment.sharepoint.com';
-  const sitePath = process.argv[4] || '/sites/KnowledgeHub';
+  const hostname = process.argv[3] || 'skysecuretech.sharepoint.com';
+  const sitePath = process.argv[4] || '/sites/InSkytes';
   const libraryName = process.argv[5] || 'KM Data Hub';
   const whosWhoName = process.argv[6] || "Who's Who";
 

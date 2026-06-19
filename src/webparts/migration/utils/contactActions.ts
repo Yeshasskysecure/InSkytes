@@ -1,4 +1,4 @@
-export const IKNOWLEDGE_CONTACT_EMAIL = 'knowledge.insights@indegene.com';
+export const IKNOWLEDGE_CONTACT_EMAIL = 'j.yeshas@skysecure.ai';
 export const IKNOWLEDGE_CONTACT_SUBJECT = 'Query :';
 
 export const getOutlookComposeUrl = (email: string = IKNOWLEDGE_CONTACT_EMAIL): string =>

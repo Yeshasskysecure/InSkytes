@@ -1,8 +1,8 @@
 param(
-  [string]$TenantId = "6d787ab7-f295-424f-b8cc-e3116a0f8520",
-  [string]$ClientId = "3baf2dbc-7365-4f9a-9826-3405a80fb4cf",
+  [string]$TenantId = "547b64a7-e66e-48df-a146-3e898cbcb60f",
+  [string]$ClientId = "f9403a61-d04e-46cf-a5d1-cbc68a66f740",
   [string]$Scope = "https://graph.microsoft.com/.default",
-  [string]$SiteId = "indegene123.sharepoint.com,d22655a2-5537-41ac-ba04-297776354061,67b98527-e5b9-4a34-99d0-b953b3c0018a",
+  [string]$SiteId = "skysecuretech.sharepoint.com,9d3cf7ea-0b61-4ad9-8780-433625ec6a6f,900862b0-5891-47d9-9ac2-83afc691e3c8",
   [string]$PageName = "Migration.aspx",
   [string]$LayoutType = "SingleWebPartAppPage"
 )
@@ -140,4 +140,4 @@ if ($sitePagesList) {
 
 Write-Host ""
 Write-Host "Done. Refresh the page:" -ForegroundColor Green
-Write-Host "https://indegene123.sharepoint.com/sites/iKnowledgeNext/SitePages/$PageName"
+Write-Host "https://skysecuretech.sharepoint.com/sites/InSkytes/SitePages/$PageName"

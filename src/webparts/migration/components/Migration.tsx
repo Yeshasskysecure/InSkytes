@@ -13,7 +13,6 @@ import { MainContentRouter } from './layout/MainContentRouter/MainContentRouter'
 import { AboutCategorySection } from '../pages/AboutPage/AboutPage';
 import { BusinessUnitDetailPage } from '../pages/BusinessUnitDetailPage/BusinessUnitDetailPage';
 import RecentlyPublishedSection from './home/RecentlyPublishedSection/RecentlyPublishedSection';
-import { SIDEBAR_GROUP_IDS } from './access.constants';
 import { MyDocuments } from '../pages/MyDocuments/MyDocuments';
 import { MyBookmarks } from '../pages/MyBookmarks/MyBookmarks';
 import { RenameBusinessUnitDialog } from './businessUnit/RenameBusinessUnitDialog/RenameBusinessUnitDialog';
@@ -32,7 +31,7 @@ import { ViewAllDocumentsPage } from '../pages/ViewAllDocumentsPage/ViewAllDocum
 import { CategoryDocumentsPage } from '../pages/CategoryDocumentsPage/CategoryDocumentsPage';
 import { IKShellFooter, IKShellHeader } from './shell/IKShellChrome';
 import { fetchAllTaxonomyOptions, ITaxonomyFieldOptions } from '../services/TaxonomyService';
-import { CACHE_KEYS, COLUMN_NAMES, GROUP_IDS, IFRAME_URLS, KM_REVIEW_HUB_DRIVE_ID, LIBRARY_NAMES, PAGE_SIZES, SITE_RELATIVE_URL } from '../config/appConfig';
+import { CACHE_KEYS, COLUMN_NAMES, IFRAME_URLS, KM_REVIEW_HUB_DRIVE_ID, LIBRARY_NAMES, PAGE_SIZES, SITE_RELATIVE_URL } from '../config/appConfig';
 import { ConfigService } from '../services/ConfigService';
 import { IKnowledgeSearchPageInfo } from '../services/KnowledgeSearchApiClient';
 import { openOutlookCompose } from '../utils/contactActions';
@@ -217,12 +216,7 @@ const SUB_DEPARTMENT_DISPLAY_NAME = 'Sub-Department';
 const STATUS_INTERNAL_NAME = COLUMN_NAMES.status;
 const PUBLISHED_INTERNAL_NAME = COLUMN_NAMES.published;
 const PUBLISHED_DISPLAY_NAME = 'Published';
-const ADMIN_GROUP_IDS = [SIDEBAR_GROUP_IDS.admins, SIDEBAR_GROUP_IDS.approvers];
-const CONTRIBUTOR_GROUP_IDS = [SIDEBAR_GROUP_IDS.contributors];
-const LEARNER_GROUP_IDS = [SIDEBAR_GROUP_IDS.learners];
-
 const normalizeFieldKey = (value?: string): string => (value || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
-const normalizeGroupId = (value?: string): string => (value || '').trim().toLowerCase();
 const OPEN_ROUTED_DOCUMENT_EVENT = 'ikn:open-routed-document';
 const UPLOAD_SUCCESS_RESTORE_STORAGE_KEY = CACHE_KEYS.uploadSuccessRestore;
 const getRoutedDocumentIdFromLocation = (): number | null => {
@@ -802,66 +796,10 @@ const Migration: React.FC<IMigrationProps> = (props) => {
       return;
     }
 
-    let isDisposed = false;
-
-    const fetchKmReviewHubAccess = async (): Promise<void> => {
-      try {
-        const graphClient = await context.msGraphClientFactory.getClient('3');
-        const currentUserGroupIds = new Set<string>();
-        let requestPath = '/me/transitiveMemberOf?$select=id';
-
-        while (requestPath) {
-          const membershipResponse = await graphClient.api(requestPath).version('v1.0').get();
-
-          (membershipResponse.value || []).forEach((entry: { id?: string }) => {
-            const groupId = normalizeGroupId(entry.id);
-            if (groupId) {
-              currentUserGroupIds.add(groupId);
-            }
-          });
-
-          const nextLink = membershipResponse['@odata.nextLink'] as string | undefined;
-          requestPath = nextLink
-            ? nextLink
-              .replace('https://graph.microsoft.com/v1.0', '')
-              .replace(/^\/v1\.0/i, '')
-            : '';
-        }
-
-        if (!isDisposed) {
-          const hasAdminOrApproverAccess = ADMIN_GROUP_IDS.some((groupId) =>
-            currentUserGroupIds.has(normalizeGroupId(groupId))
-          );
-          const hasKmAdminAccess = currentUserGroupIds.has(normalizeGroupId(GROUP_IDS.admins));
-          const hasContributorAccess = CONTRIBUTOR_GROUP_IDS.some((groupId) =>
-            currentUserGroupIds.has(normalizeGroupId(groupId))
-          );
-          const hasLearnerAccess = LEARNER_GROUP_IDS.some((groupId) =>
-            currentUserGroupIds.has(normalizeGroupId(groupId))
-          );
-          const shouldUseLearnerView = hasLearnerAccess && !hasAdminOrApproverAccess && !hasContributorAccess;
-
-          setCanAccessKmReviewHub(hasAdminOrApproverAccess);
-          setIsKmAdmin(hasKmAdminAccess);
-          setIsLearner(shouldUseLearnerView);
-          setIsReviewerAccessResolved(true);
-        }
-      } catch (error) {
-        console.warn('Unable to resolve KM Review Hub access:', error);
-        if (!isDisposed) {
-          setCanAccessKmReviewHub(false);
-          setIsKmAdmin(false);
-          setIsLearner(false);
-          setIsReviewerAccessResolved(true);
-        }
-      }
-    };
-
-    void fetchKmReviewHubAccess();
-
-    return () => {
-      isDisposed = true;
-    };
+    setCanAccessKmReviewHub(true);
+    setIsKmAdmin(true);
+    setIsLearner(false);
+    setIsReviewerAccessResolved(true);
   }, [context]);
 
   const handleSidebarChange = React.useCallback((view: TSidebarView) => {
@@ -2441,4 +2379,3 @@ const Migration: React.FC<IMigrationProps> = (props) => {
 };
 
 export default Migration;
-

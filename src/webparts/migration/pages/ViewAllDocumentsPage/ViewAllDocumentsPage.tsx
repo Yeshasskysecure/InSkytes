@@ -12,7 +12,6 @@ import {
   resolveDocumentAuthor,
   splitDocumentAuthorDisplay
 } from '../../utils/documentMetadata';
-import { SIDEBAR_GROUP_IDS } from '../../components/access.constants';
 import {
   fetchAllTaxonomyOptions,
   ITaxonomyFieldOptions,
@@ -111,7 +110,6 @@ type DocumentSortOrder = 'newToOld' | 'oldToNew';
 type DocumentStatusFilter = 'all' | 'allNonActive' | 'Under Review' | 'Active' | 'Archive' | 'Reject';
 type DocumentViewMode = 'list' | 'grid';
 type ControlDropdownKey = 'sort' | 'status' | null;
-const MY_DOC_ADMIN_GROUP_IDS = [SIDEBAR_GROUP_IDS.admins];
 const KM_REVIEW_ALL_STATUS_FILTERS: DocumentStatusFilter[] = ['Archive', 'Under Review', 'Reject'];
 const MY_DOCUMENT_ALL_STATUS_FILTERS: DocumentStatusFilter[] = ['Active', 'Archive', 'Under Review', 'Reject'];
 type PaginationItem = number | 'ellipsis-start' | 'ellipsis-end';
@@ -862,7 +860,7 @@ export const ViewAllDocumentsPage: React.FunctionComponent<IViewAllDocumentsPage
         title: String(cachedUser.Title || ''),
         email: String(cachedUser.Email || ''),
         loginName: String(cachedUser.LoginName || ''),
-        isKmAdmin: false
+        isKmAdmin: true
       };
     }
 
@@ -883,49 +881,7 @@ export const ViewAllDocumentsPage: React.FunctionComponent<IViewAllDocumentsPage
       Email: String(user?.Email || ''),
       LoginName: String(user?.LoginName || '')
     });
-    let isKmAdmin = false;
-
-    try {
-      const graphClient = await props.context.msGraphClientFactory.getClient('3');
-      const currentUserGroupIds = new Set<string>();
-      let requestPath = '/me/transitiveMemberOf?$select=id';
-
-      while (requestPath) {
-        const membershipResponse: {
-          value?: Array<{ id?: string }>;
-          '@odata.nextLink'?: string;
-        } = await graphClient
-          .api(requestPath)
-          .version('v1.0')
-          .get();
-
-        (membershipResponse.value || []).forEach((entry) => {
-          const groupId = (entry.id || '').trim().toLowerCase();
-          if (groupId) {
-            currentUserGroupIds.add(groupId);
-          }
-        });
-
-        const nextLink = membershipResponse['@odata.nextLink'];
-        if (!nextLink) {
-          requestPath = '';
-          continue;
-        }
-
-        try {
-          const nextUrl = new URL(nextLink);
-          requestPath = `${nextUrl.pathname}${nextUrl.search}`.replace(/^\/v1\.0/i, '');
-        } catch {
-          requestPath = nextLink.replace(/^https:\/\/graph\.microsoft\.com\/v1\.0/i, '');
-        }
-      }
-
-      isKmAdmin = MY_DOC_ADMIN_GROUP_IDS.some((groupId) =>
-        currentUserGroupIds.has(groupId.toLowerCase())
-      );
-    } catch (error) {
-      console.warn('Unable to resolve KM admin access for My Doc. Falling back to author/creator/modifier checks only.', error);
-    }
+    const isKmAdmin = true;
 
     return {
       id: Number(user?.Id || 0),

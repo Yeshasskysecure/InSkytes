@@ -1,10 +1,10 @@
 param(
-  [string]$TenantId = "6d787ab7-f295-424f-b8cc-e3116a0f8520",
-  [string]$TenantName = "indegene123",
-  [string]$ClientId = "3baf2dbc-7365-4f9a-9826-3405a80fb4cf",
+  [string]$TenantId = "547b64a7-e66e-48df-a146-3e898cbcb60f",
+  [string]$TenantName = "skysecuretech",
+  [string]$ClientId = "f9403a61-d04e-46cf-a5d1-cbc68a66f740",
   [ValidateSet("PnPInteractive", "OSLogin", "DeviceLogin", "Interactive", "AppSecret")]
   [string]$AuthMode = "OSLogin",
-  [string]$SitePath = "/sites/iKnowledgeNext",
+  [string]$SitePath = "/sites/InSkytes",
   [string]$PageName = "Migration.aspx",
   [string]$PageTitle = "Migration",
   [string]$PackagePath = ".\sharepoint\solution\sharepoint-migration-site.sppkg",

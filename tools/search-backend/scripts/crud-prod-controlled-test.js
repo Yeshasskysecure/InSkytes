@@ -437,7 +437,7 @@ const run = async () => {
 
   const { env, absolutePath } = loadEnv(envPath);
   const hostname = String(env.SHAREPOINT_HOSTNAME || '').toLowerCase();
-  if (!hostname.includes('indegene123.sharepoint.com')) {
+  if (!hostname.includes('skysecuretech.sharepoint.com')) {
     throw new Error(`Refusing controlled prod CRUD test against unexpected SharePoint host: ${env.SHAREPOINT_HOSTNAME || '(missing)'}`);
   }
 

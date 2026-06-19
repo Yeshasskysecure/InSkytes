@@ -5,6 +5,7 @@ import {
   LIBRARY_NAMES,
   LIST_PATHS as APP_LIST_PATHS,
   PAGE_URLS as APP_PAGE_URLS,
+  SITE_RELATIVE_URL,
   SITE_URL
 } from '../config/appConfig';
 
@@ -27,7 +28,7 @@ export const PAGE_URLS = {
 };
 
 export const PAGE_PATHS = {
-  home: '/sites/iKnowledgeNext/SitePages/Home.aspx',
+  home: `${SITE_RELATIVE_URL}/SitePages/Home.aspx`,
   businessUnits: '/SitePages/Business-Units.aspx',
   categories: '/SitePages/Categories.aspx',
   search: '/SitePages/Search.aspx',

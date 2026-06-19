@@ -845,7 +845,7 @@ export class SharePointSearchService {
           }
 
           // 🚩 DYNAMIC LIST DISCOVERY: Extract list name from path to avoid "ID not found" errors
-          // e.g. .../sites/KnowledgeHub/KM%20Data%20Hub/test.pdf -> KM Data Hub
+          // e.g. .../sites/InSkytes/KM%20Review%20Hub/test.pdf -> KM Review Hub
           let listTitle = LIBRARY_NAMES.kmDataHub;
           try {
             const pathParts = docUrl.split('/');
@@ -858,8 +858,8 @@ export class SharePointSearchService {
               listTitle = decodeURIComponent(pathParts[listsIndex + 1]);
             } else {
               // 🚩 SMART EXTRACTION: If no /Forms/ or /Lists/, the library is usually the 2nd segment after the site root
-              // Site Root: .../sites/KnowledgeHub/ -> segments [..., 'sites', 'KnowledgeHub']
-              // Document: .../sites/KnowledgeHub/LibraryName/File.pdf -> segments [..., 'sites', 'KnowledgeHub', 'LibraryName', 'File.pdf']
+              // Site Root: .../sites/InSkytes/ -> segments [..., 'sites', 'InSkytes']
+              // Document: .../sites/InSkytes/LibraryName/File.pdf -> segments [..., 'sites', 'InSkytes', 'LibraryName', 'File.pdf']
               const siteIndex = pathParts.findIndex(p => p.toLowerCase() === 'sites');
               if (siteIndex !== -1 && pathParts.length > siteIndex + 3) {
                 listTitle = decodeURIComponent(pathParts[siteIndex + 2]);

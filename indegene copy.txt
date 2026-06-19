@@ -214,8 +214,61 @@ Business-Units.aspx
 
 
 
-ull Graph Site ID
+Full Graph Site ID
 
 ✅ Available
 
 skysecuretech.sharepoint.com,9d3cf7ea-0b61-4ad9-8780-433625ec6a6f,900862b0-5891-47d9-9ac2-83afc691e3c8
+
+
+
+Current confirmed InSkytes deployment values - 19 June 2026
+
+Skysecure tenant ID
+547b64a7-e66e-48df-a146-3e898cbcb60f
+
+SST Lab tenant ID where the app registration was created
+d7ab1225-4649-4cb3-abd5-bc732bed3203
+
+Multi-tenant app registration client ID
+f9403a61-d04e-46cf-a5d1-cbc68a66f740
+
+Important security note
+The client secret value was used for testing only and must not be committed to the repo or notes. Store it only in Azure App Service / Key Vault / secure backend environment settings. Rotate it if it has been shared outside a secure channel.
+
+Graph consent status
+The SST Lab app registration was made multi-tenant and consented in the Skysecure tenant. App-only Graph access was tested successfully against the Skysecure tenant.
+
+Graph site lookup tested successfully
+GET https://graph.microsoft.com/v1.0/sites/skysecuretech.sharepoint.com:/sites/InSkytes?$select=id,webUrl,displayName
+
+Returned site
+id: skysecuretech.sharepoint.com,9d3cf7ea-0b61-4ad9-8780-433625ec6a6f,900862b0-5891-47d9-9ac2-83afc691e3c8
+webUrl: https://skysecuretech.sharepoint.com/sites/InSkytes
+displayName: InSkytes
+
+KM Review Hub drive lookup tested successfully
+Drive ID: b!6vc8nWEL2UqHgEM2Jexqb7BiCJCRWNlHmsKDr8aR48jmBJ5sRvZbT6YQlOLusHmY
+Drive name: KM Review Hub
+Drive type: documentLibrary
+Drive URL: https://skysecuretech.sharepoint.com/sites/InSkytes/KM%20Review%20Hub
+
+Repo configuration updated
+SITE_URL = https://skysecuretech.sharepoint.com/sites/InSkytes
+SITE_RELATIVE_URL = /sites/InSkytes
+KM_REVIEW_HUB_DRIVE_ID = b!6vc8nWEL2UqHgEM2Jexqb7BiCJCRWNlHmsKDr8aR48jmBJ5sRvZbT6YQlOLusHmY
+KM Review Hub list GUID = 6c9e04e6-f646-4f5b-a610-94e2eeb07998
+KM Harvest Hub list GUID = 90f2a0f9-85db-4a16-94dc-5bd94bd34cee
+Site Pages library GUID = 3be0eb5c-4b89-4856-b7b1-49668191e3ce
+
+Current role setup
+Power BI is not considered for now.
+Who's Who is not considered for now.
+Azure Search indexes/indexers still need to be created in the Azure SST account.
+All current users are treated as admins in the frontend until separate roles are introduced.
+
+Expected local test flow
+Run: npx gulp serve
+It should open the InSkytes hosted workbench:
+https://skysecuretech.sharepoint.com/sites/InSkytes/_layouts/15/workbench.aspx?debug=true&noredir=true&reset=true&ikBackend=prod&debugManifestsFile=https%3A%2F%2Flocalhost%3A4321%2Ftemp%2Fbuild%2Fmanifests.js
+Then click the plus button, add/select the Migration web part, and verify the frontend.

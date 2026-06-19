@@ -1,6 +1,7 @@
 import * as React from 'react';
 import styles from './IKShellChrome.module.scss';
 import { NAV_PATHS, pushPageUrl } from '../../services/permalinkService';
+import { SITE_URL } from '../../config/appConfig';
 import dmSansFontData from '../../assets/fonts/dmSansFontData';
 import { openOutlookCompose } from '../../utils/contactActions';
 
@@ -15,8 +16,8 @@ const dmSansFontFace = `
 `;
 
 const SHOW_BUSINESS_UNITS_NAV = false;
-const FOOTER_QUICK_TOUR_URL = 'https://indegene123.sharepoint.com/sites/iKnowledgeNext/SitePages/Assets.aspx?assetID=18681&env=WebViewList';
-const FOOTER_FAQ_URL = 'https://indegene123.sharepoint.com/sites/iKnowledgeNext/SitePages/Assets.aspx?assetID=18680&env=WebViewList';
+const FOOTER_QUICK_TOUR_URL = `${SITE_URL}/SitePages/Assets.aspx`;
+const FOOTER_FAQ_URL = `${SITE_URL}/SitePages/Assets.aspx`;
 
 export type IKShellHeaderNavKey =
   | 'businessUnits'
@@ -228,7 +229,7 @@ export const IKShellHeader: React.FC<IIKShellHeaderProps> = (props) => {
         type="button"
         className={styles.brand}
         onClick={props.onHomeOpen || (() => navigateTo(NAV_PATHS.home))}
-        aria-label="Go to iKnowledgeNext home"
+        aria-label="Go to InSkytes home"
       >
         <img 
           src={require('../../assets/indegene_logo.png')} 
@@ -238,12 +239,12 @@ export const IKShellHeader: React.FC<IIKShellHeaderProps> = (props) => {
         <span className={styles.brandDivider}>|</span>
         <img
           src={require('../../assets/iknowledgenext_logo.png')}
-          alt="iKnowledgeNext"
+          alt="InSkytes"
           className={styles.productLogoImage}
         />
       </button>
       <div className={styles.headerActions}>
-        <nav className={styles.nav} style={navStyle} aria-label="iKnowledgeNext navigation">
+        <nav className={styles.nav} style={navStyle} aria-label="InSkytes navigation">
           {SHOW_BUSINESS_UNITS_NAV && renderNavItem('Business Units', props.onBusinessUnitsOpen, NAV_PATHS.businessUnits, props.activeNavKey === 'businessUnits', navItemStyle)}
           {renderNavItem('My Bookmarks', props.onBookmarksOpen, NAV_PATHS.bookmark, props.activeNavKey === 'bookmarks', navItemStyle)}
           {!props.hideDocumentsNav && renderNavItem('My Documents', props.onDocumentsOpen, NAV_PATHS.myDocuments, props.activeNavKey === 'documents', navItemStyle)}
@@ -344,7 +345,7 @@ export const IKShellHeader: React.FC<IIKShellHeaderProps> = (props) => {
                     style={moreMenuItemStyle}
                     onClick={() => {
                       setShowMoreMenu(false);
-                      openAdminLink('https://indegene123.sharepoint.com/sites/iKnowledgeNext/_layouts/15/SiteAdmin.aspx#/termStoreAdminCenter');
+                      openAdminLink(`${SITE_URL}/_layouts/15/SiteAdmin.aspx#/termStoreAdminCenter`);
                     }}
                   >
                     Term Store
@@ -356,7 +357,7 @@ export const IKShellHeader: React.FC<IIKShellHeaderProps> = (props) => {
                     style={moreMenuItemStyle}
                     onClick={() => {
                       setShowMoreMenu(false);
-                      openAdminLink('https://indegene123.sharepoint.com/sites/iKnowledgeNext/_layouts/15/settings.aspx');
+                      openAdminLink(`${SITE_URL}/_layouts/15/settings.aspx`);
                     }}
                   >
                     Site Settings
@@ -481,7 +482,7 @@ export const IKShellHeader: React.FC<IIKShellHeaderProps> = (props) => {
                     style={mobileNavItemStyle}
                     onClick={() => {
                       setIsMobileNavOpen(false);
-                      openAdminLink('https://indegene123.sharepoint.com/sites/iKnowledgeNext/_layouts/15/SiteAdmin.aspx#/termStoreAdminCenter');
+                      openAdminLink(`${SITE_URL}/_layouts/15/SiteAdmin.aspx#/termStoreAdminCenter`);
                     }}
                   >
                     Term Store
@@ -493,7 +494,7 @@ export const IKShellHeader: React.FC<IIKShellHeaderProps> = (props) => {
                     style={mobileNavItemStyle}
                     onClick={() => {
                       setIsMobileNavOpen(false);
-                      openAdminLink('https://indegene123.sharepoint.com/sites/iKnowledgeNext/_layouts/15/settings.aspx');
+                      openAdminLink(`${SITE_URL}/_layouts/15/settings.aspx`);
                     }}
                   >
                     Site Settings
@@ -589,7 +590,7 @@ export const IKShellFooter: React.FC<IIKShellFooterProps> = (props) => {
   return (
   <footer className={`${styles.footer} ${props.compact ? styles.footerCompact : ''} ${props.isHomeFooter ? styles.footerHome : ''} ${props.className || ''}`} style={footerStyle}>
     <a
-      href="https://helpdesk.indegene.com/ui/home"
+      href={SITE_URL}
       target="_blank"
       rel="noopener noreferrer"
       className={styles.footerLink}

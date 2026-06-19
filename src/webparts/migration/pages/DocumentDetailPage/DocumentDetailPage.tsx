@@ -49,8 +49,7 @@ import {
   KM_DATA_HUB_BU_FIELD_INTERNAL_NAME,
   KM_DATA_HUB_DEPARTMENT_FIELD_INTERNAL_NAME
 } from '../../utils/buDepartmentSelections';
-import { SIDEBAR_GROUP_IDS } from '../../components/access.constants';
-import { COLUMN_NAMES, GROUP_NAMES, LIBRARY_NAMES, LIST_NAMES, PAGE_URLS, SITE_PAGES, SITE_URL } from '../../config/appConfig';
+import { COLUMN_NAMES, LIBRARY_NAMES, LIST_NAMES, PAGE_URLS, SITE_PAGES, SITE_URL } from '../../config/appConfig';
 import { touchRecentlyPublishedCacheForDocument } from '../../services/recentlyPublishedCache';
 
 const PdfViewer = React.lazy(() =>
@@ -70,10 +69,6 @@ const ImageViewer = React.lazy(() =>
 // Session-level caches to track which lists have been verified and store user titles
 const VERIFIED_LISTS_DETAIL_PAGE: Set<string> = new Set();
 const AUTHOR_CACHE: Record<number, string> = {};
-
-const normalizeGroupName = (value?: string): string => (
-  (value || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '')
-);
 
 const makeIconOnlyToolbarItem = (
   item: ICommandBarItemProps,
@@ -1102,8 +1097,6 @@ const buildPreviewCandidates = (
   return candidates;
 };
 
-const normalizeGroupId = (value?: string): string => (value || '').trim().toLowerCase();
-
 const extractNumericIds = (value: any): number[] => {
   if (value === null || value === undefined) {
     return [];
@@ -2062,83 +2055,10 @@ export const DocumentDetailPage: React.FunctionComponent<IDocumentDetailPageProp
   }, [props.documentId]);
 
   React.useEffect(() => {
-    if (!props.context?.msGraphClientFactory) {
-      setIsKmAdmin(false);
-      setIsApprover(false);
-      return;
-    }
-
-    let isDisposed = false;
-
-    const fetchGroupMembership = async (): Promise<void> => {
-      try {
-        const graphClient = await props.context!.msGraphClientFactory.getClient('3');
-        const currentUserGroupIds = new Set<string>();
-        const currentUserGroupNames = new Set<string>();
-        let requestPath = '/me/transitiveMemberOf?$select=id,displayName';
-
-        while (requestPath) {
-          const membershipResponse = await graphClient.api(requestPath).version('v1.0').get();
-
-          (membershipResponse.value || []).forEach((entry: { id?: string; displayName?: string }) => {
-            const groupId = normalizeGroupId(entry.id);
-            if (groupId) {
-              currentUserGroupIds.add(groupId);
-            }
-            const groupName = normalizeGroupName(entry.displayName);
-            if (groupName) {
-              currentUserGroupNames.add(groupName);
-            }
-          });
-
-          const nextLink = membershipResponse['@odata.nextLink'] as string | undefined;
-          requestPath = nextLink
-            ? nextLink
-              .replace('https://graph.microsoft.com/v1.0', '')
-              .replace('https://graph.microsoft.com/v1.0', '')
-              .replace(/^\/v1\.0/i, '')
-            : '';
-        }
-
-        if (!isDisposed) {
-          const hasAdminAccess =
-            currentUserGroupIds.has(normalizeGroupId(SIDEBAR_GROUP_IDS.admins)) ||
-            currentUserGroupNames.has(normalizeGroupName(GROUP_NAMES.admins));
-          const hasApproverAccess =
-            currentUserGroupIds.has(normalizeGroupId(SIDEBAR_GROUP_IDS.approvers)) ||
-            currentUserGroupNames.has(normalizeGroupName(GROUP_NAMES.approvers));
-          const hasContributorAccess =
-            currentUserGroupIds.has(normalizeGroupId(SIDEBAR_GROUP_IDS.contributors)) ||
-            currentUserGroupNames.has(normalizeGroupName(GROUP_NAMES.contributors)) ||
-            currentUserGroupNames.has(normalizeGroupName('SG_KM-Contributor')) ||
-            currentUserGroupNames.has(normalizeGroupName('KM-Contributor')) ||
-            currentUserGroupNames.has(normalizeGroupName('SG_KM-Contributer')) ||
-            currentUserGroupNames.has(normalizeGroupName('KM-Contributer'));
-          const hasLearnerAccess =
-            currentUserGroupIds.has(normalizeGroupId(SIDEBAR_GROUP_IDS.learners)) ||
-            currentUserGroupNames.has(normalizeGroupName(GROUP_NAMES.learners));
-
-          setIsKmAdmin(hasAdminAccess);
-          setIsApprover(hasApproverAccess);
-          setIsContributor(hasContributorAccess);
-          setIsLearner(hasLearnerAccess && !hasAdminAccess && !hasApproverAccess && !hasContributorAccess);
-        }
-      } catch (error) {
-        console.warn('Unable to resolve document-detail group membership:', error);
-        if (!isDisposed) {
-          setIsKmAdmin(false);
-          setIsApprover(false);
-          setIsContributor(false);
-          setIsLearner(false);
-        }
-      }
-    };
-
-    void fetchGroupMembership();
-
-    return () => {
-      isDisposed = true;
-    };
+    setIsKmAdmin(true);
+    setIsApprover(true);
+    setIsContributor(true);
+    setIsLearner(false);
   }, [props.context]);
 
   React.useEffect(() => {
