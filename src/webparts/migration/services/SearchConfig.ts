@@ -50,7 +50,7 @@ const LOCAL_SEARCH_API_BASE_URL = 'https://localhost:7072';
 // - 'production': Workbench uses the deployed Azure Web App backend
 // Normal non-Workbench SharePoint pages always default to production unless an
 // explicit query/runtime config override is supplied.
-let WORKBENCH_SEARCH_BACKEND_MODE: 'local' | 'production' = 'production';
+let WORKBENCH_SEARCH_BACKEND_MODE: 'local' | 'production' = 'local';
 
 const shouldUseLocalBackendByDefault = (): boolean => {
   if (typeof window === 'undefined') {

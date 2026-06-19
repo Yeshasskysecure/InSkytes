@@ -4,7 +4,7 @@
   "https": true,
   "serveConfigurations": {
     "default": {
-      "pageUrl": "https://skysecuretech.sharepoint.com/sites/InSkytes/_layouts/15/workbench.aspx?debug=true&noredir=true&reset=true&ikBackend=prod&debugManifestsFile=https%3A%2F%2Flocalhost%3A4321%2Ftemp%2Fbuild%2Fmanifests.js"
+      "pageUrl": "https://skysecuretech.sharepoint.com/sites/InSkytes/_layouts/15/workbench.aspx?debug=true&noredir=true&reset=true&ikBackend=local&ikSearchApi=http%3A%2F%2Flocalhost%3A7072&debugManifestsFile=https%3A%2F%2Flocalhost%3A4321%2Ftemp%2Fbuild%2Fmanifests.js"
     },
     "syncMetrics": {
       "pageUrl": "https://skysecuretech.sharepoint.com/sites/InSkytes/KM%20Review%20Hub/Forms/AllItems.aspx",

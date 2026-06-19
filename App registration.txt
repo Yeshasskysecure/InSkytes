@@ -1,0 +1,242 @@
+App registration 
+Name Inskytes
+Create a resource group for this 
+take contributor access for 3 ppl 
+model deployments create resources 
+Azure ai search 
+doc intelligence 
+azure open ai(cognitive services:text model , gpt model , whisper)
+
+
+
+value : 2rF8Q~9fatNgGV.wiO_WN-p~uWGqCi6Sw4KS5boz
+Secret Id : 7d730a20-77cd-491c-8513-f297258b5faa
+
+7d730a20-77cd-491c-8513-f297258b5faa
+
+
+openai:
+  API key B4Q9S5uG55j7oIP1m2bnPoVzjJAd06otmONAYzJMilji42T3kYOCJQQJ99CFACGhslBXJ3w3AAAAACOGNdR0
+ Project endpoint https://inskytes-openai.services.ai.azure.com/api/projects/proj-default
+Azure OpenAI endpoint https://inskytes-openai.openai.azure.com/openai/v1
+
+
+5.1:
+Target URI:https://yesha-mqkrlfbt-southindia.cognitiveservices.azure.com/openai/responses?api-version=2025-04-01-preview	
+
+Key: 4XTTkCpOElt7JV7knWzUyxEnKVbYmElydEz5ExVwywHkkLRCDgUcJQQJ99CFAC77bzfXJ3w3AAAAACOGujhN
+
+Deployment info
+Name
+gpt-5.1
+Provisioning state
+Succeeded
+Deployment type
+Global Standard
+Created on
+2026-06-19T10:08:38.2704147Z
+Created by
+yeshas.j@sstlab.in
+Modified on
+Jun 19, 2026 3:38 PM
+Modified by
+yeshas.j@sstlab.in
+Version upgrade policy
+Once a new default version is available
+Rate limit (Tokens per minute)
+2,50,000
+Rate limit (Requests per minute)
+2,500
+
+
+Model name
+gpt-5.1
+Model version
+2025-11-13
+Life cycle status
+GenerallyAvailable
+Date created
+Nov 11, 2025 5:30 AM
+Date updated
+Nov 11, 2025 5:30 AM
+Model retirement date
+May 15, 2027 5:30 AM
+
+
+text-embedding-3-large
+Target URI
+https://yesha-mqkrlfbt-southindia.cognitiveservices.azure.com/openai/deployments/text-embedding-3-large/embeddings?api-version=2023-05-15
+
+Key
+4XTTkCpOElt7JV7knWzUyxEnKVbYmElydEz5ExVwywHkkLRCDgUcJQQJ99CFAC77bzfXJ3w3AAAAACOGujhN
+
+Deployment info
+Name
+text-embedding-3-large
+Provisioning state
+Succeeded
+Deployment type
+Global Standard
+Created on
+2026-06-19T10:11:23.4250506Z
+Created by
+yeshas.j@sstlab.in
+Modified on
+Jun 19, 2026 3:41 PM
+Modified by
+yeshas.j@sstlab.in
+Version upgrade policy
+Model version will not be automatically upgraded
+Rate limit (Tokens per minute)
+2,50,000
+Rate limit (Requests per minute)
+1,500
+Model name
+text-embedding-3-large
+Model version
+1
+Life cycle status
+GenerallyAvailable
+Date created
+Jan 25, 2024 5:30 AM
+Date updated
+Jan 25, 2024 5:30 AM
+Model retirement date
+Apr 15, 2027 5:30 AM
+
+
+
+
+whisper:
+
+Target URI
+https://yesha-mqkrlfbt-southindia.cognitiveservices.azure.com/openai/deployments/whisper/audio/translations?api-version=2024-06-01
+
+key:
+4XTTkCpOElt7JV7knWzUyxEnKVbYmElydEz5ExVwywHkkLRCDgUcJQQJ99CFAC77bzfXJ3w3AAAAACOGujhN
+
+Deployment info
+Name
+whisper
+Provisioning state
+Succeeded
+Deployment type
+Standard
+Created on
+2026-06-19T10:12:58.7683096Z
+Created by
+yeshas.j@sstlab.in
+Modified on
+Jun 19, 2026 3:42 PM
+Modified by
+yeshas.j@sstlab.in
+Version upgrade policy
+Once a new default version is available
+Rate limit (Tokens per minute)
+--
+Rate limit (Requests per minute)
+3
+Model name
+whisper
+Model version
+001
+Life cycle status
+GenerallyAvailable
+Date created
+Sep 14, 2023 5:30 AM
+Date updated
+Sep 14, 2023 5:30 AM
+Model retirement date
+Dec 15, 2026 5:30 AM
+
+
+
+
+
+Resource group
+(move)
+:
+inskytes
+Status
+:
+Active
+Location
+:
+Central India
+Subscription
+(move)
+:
+SOC Automation Agent Subs (Skysecure Credits Transferred Subs)
+Subscription ID
+:
+789ffe48-9506-43da-b629-b0b9174bad4d
+API Kind
+:
+FormRecognizer
+Pricing tier
+:
+Standard
+Endpoint
+:
+https://inskytes-doc-intell.cognitiveservices.azure.com/
+Manage keys
+:
+Click here to manage keys
+Autoscale
+:
+Disabled
+Tags
+(edit)
+:
+Add tags
+
+api key: 1GT69D6ErPzKf571MJEbbClHZJZl7ofQzxPU36pnIhJ6cQEEFKmVJQQJ99CFACGhslBXJ3w3AAALACOGyI7c
+
+Location/Region
+centralindia
+Endpoint
+https://inskytes-doc-intell.cognitiveservices.azure.com/
+
+
+now azure ai search or foudry iq:
+Resource group (move)
+:
+inskytes
+Location (move)
+:
+Central India
+Subscription (move)
+:
+SOC Automation Agent Subs (Skysecure Credits Transferred Subs)
+Subscription ID
+:
+789ffe48-9506-43da-b629-b0b9174bad4d
+Status
+:
+Running
+Url
+:
+https://inskytes-search.search.windows.net
+Pricing tier
+:
+Free
+Replicas
+:
+1 (No SLA)
+Partitions
+:
+1
+Search units
+:
+1
+Date created
+:
+Jun 19, 2026, 3:09:33 PM 
+Compute type
+:
+Default
+Tags (edit)
+:
+Add tags
+
+api key:9cdgnBk9aes0XCg2KrTYEQbOx16pnpDOIfj2REDojOAzSeDV0MtL

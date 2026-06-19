@@ -48,6 +48,7 @@ import { CACHE_KEYS, COLUMN_NAMES, LIBRARY_NAMES, LIST_NAMES } from '../../../co
 
 const MAX_FILES = 5;
 const LIBRARY_NAME = LIBRARY_NAMES.kmDataHub;
+const SHAREPOINT_SHORT_TEXT_MAX_LENGTH = 255;
 const MAX_SENSITIVE_TERMS_LENGTH = 1000;
 const OPEN_ROUTED_DOCUMENT_EVENT = 'ikn:open-routed-document';
 const UNSUPPORTED_FILE_FORMAT_MESSAGE = 'Unsupported file format. Please upload a valid document';
@@ -741,7 +742,7 @@ const normalizeMetadataForKMDataHub = (
   const normalizedData = {
     ...metadata,
     title: cleanTextField(String(aiResult.title || ''), 255),
-    description: cleanTextField(String(aiResult.description || aiResult.abstract || '')),
+    description: cleanTextField(String(aiResult.description || aiResult.abstract || ''), SHAREPOINT_SHORT_TEXT_MAX_LENGTH),
     selectedAuthorUpns: Array.isArray(metadata.selectedAuthorUpns)
       ? metadata.selectedAuthorUpns.filter(Boolean)
       : metadata.selectedAuthorUpn
@@ -2086,7 +2087,7 @@ export const FileUpload: React.FC<IFileUploadProps> = (props) => {
     const effectiveStatus = String(metadata.status || 'Under Review').trim() || 'Under Review';
     const isPublishedStatus = ['active', 'approved'].indexOf(effectiveStatus.toLowerCase()) !== -1;
     const effectiveTitle = metadata.title || '-';
-    const effectiveDescription = metadata.description || '-';
+    const effectiveDescription = cleanTextField(metadata.description || '-', SHAREPOINT_SHORT_TEXT_MAX_LENGTH) || '-';
     const effectiveSensitiveTerms = metadata.sensitiveTerms || '';
     const formValues: Array<{ FieldName: string; FieldValue: string }> = [];
 
@@ -2172,7 +2173,7 @@ export const FileUpload: React.FC<IFileUploadProps> = (props) => {
     const body: Record<string, any> = {
       [fieldMap.status]: metadata.status || 'Under Review',
       [fieldMap.title]: metadata.title || '-',
-      [fieldMap.description]: metadata.description || '-',
+      [fieldMap.description]: cleanTextField(metadata.description || '-', SHAREPOINT_SHORT_TEXT_MAX_LENGTH) || '-',
       [fieldMap.sensitiveTerms]: metadata.sensitiveTerms || ''
     };
 
@@ -2431,7 +2432,7 @@ export const FileUpload: React.FC<IFileUploadProps> = (props) => {
           ? {
               ...metadata,
               title: metadata?.title || '',
-              description: cleanTextField(metadata?.description || '', undefined),
+              description: cleanTextField(metadata?.description || '', SHAREPOINT_SHORT_TEXT_MAX_LENGTH),
               documentType: metadata?.documentType || '',
               client: metadata?.client || '',
               geography: metadata?.geography || '',
@@ -2592,7 +2593,7 @@ export const FileUpload: React.FC<IFileUploadProps> = (props) => {
         );
         const mediaMetadataForNormalization = {
           title: cleanedMediaTitle,
-          description: cleanTextField(mediaAnalysis.abstract || '', undefined),
+          description: cleanTextField(mediaAnalysis.abstract || '', SHAREPOINT_SHORT_TEXT_MAX_LENGTH),
           documentType: mediaAnalysis.documentType || '',
           client: mediaAnalysis.client || '',
           geography: mediaAnalysis.geography || '',
@@ -4018,7 +4019,7 @@ export const FileUpload: React.FC<IFileUploadProps> = (props) => {
                       const mediaMetadataForNormalization = {
                         ...data,
                         title: data?.title || '',
-                        description: cleanTextField(data?.description || '', undefined),
+                        description: cleanTextField(data?.description || '', SHAREPOINT_SHORT_TEXT_MAX_LENGTH),
                         documentType: data?.documentType || '',
                         client: data?.client || '',
                         geography: data?.geography || '',
@@ -4521,4 +4522,3 @@ export const FileUpload: React.FC<IFileUploadProps> = (props) => {
 };
 
 export default FileUpload;
-
