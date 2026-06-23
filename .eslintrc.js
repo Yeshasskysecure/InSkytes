@@ -294,6 +294,14 @@ module.exports = {
       }
     },
     {
+      files: ['tools/search-backend/**/*.ts'],
+      parserOptions: {
+        project: './tools/search-backend/tsconfig.json',
+        ecmaVersion: 2020,
+        sourceType: 'module'
+      }
+    },
+    {
       // For unit tests, we can be a little bit less strict.  The settings below revise the
       // defaults specified in the extended configurations, as well as above.
       files: [
